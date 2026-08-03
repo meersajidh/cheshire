@@ -1,0 +1,28 @@
+{
+  "name": "dinah-framework",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "dinah — a platform for building desktop applications",
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check": "pnpm lint && pnpm build && pnpm typecheck && pnpm test",
+    "clean": "pnpm -r exec rm -rf dist && rm -rf .dinah"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "catalog:",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0",
+    "typescript": "catalog:",
+    "typescript-eslint": "^8.62.0",
+    "vitest": "catalog:"
+  }
+}

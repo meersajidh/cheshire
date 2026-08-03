@@ -1,0 +1,43 @@
+packages:
+  - 'packages/*'
+  - 'packages/runtime/*'
+  - 'cli/*'
+
+# templates/ is deliberately NOT a workspace package: template dependencies are
+# resolved by create-dinah inside the generated app, never installed here.
+# (x-bb learned the harder version of this: examples/ on `workspace:*` resolved
+# to framework SOURCE, so the one thing meant to prove the seam proved an
+# arrangement no consumer could reproduce.)
+
+# Single source of version truth for anything more than one package names.
+# A manifest writes `"react": "catalog:"` and resolves from here.
+catalog:
+  typescript: ~6.0.2
+  '@types/node': ^24.13.2
+  react: ^19.2.7
+  react-dom: ^19.2.7
+  '@types/react': ^19.2.17
+  '@types/react-dom': ^19.2.3
+  vite: ^8.1.1
+  '@vitejs/plugin-react': ^6.0.3
+  electron: 43.1.1
+  electron-builder: ^26.8.1
+  vitest: ^4.0.0
+
+# Flat, real-dir node_modules — NOT pnpm's default isolated/symlinked linker.
+# The isolated linker uses junctions on Windows, which electron-builder does not
+# follow when collecting native .node files: the packaged app ships without them
+# and crashes on launch. `hoisted` reproduces the flat layout structurally.
+nodeLinker: hoisted
+
+# pnpm 10+ gates every dependency lifecycle script by default (supply-chain
+# guard). pnpm 11.3+ reads this MAP, not the older `onlyBuiltDependencies`
+# array — one explicit decision per build-script dependency.
+#   electron → true: its postinstall downloads the platform binary.
+allowBuilds:
+  electron: true
+
+# Supply-chain cooldown: refuse lockfile entries published inside this window
+# (minutes; 4320 = 3 days). Committed here so CI and every machine enforce one
+# policy rather than relying on per-machine global pnpm config.
+minimumReleaseAge: 4320
