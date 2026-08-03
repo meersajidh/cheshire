@@ -1,0 +1,25 @@
+{
+  "name": "@dinah/core",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "dinah foundational services and the dinah.config contract",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}
