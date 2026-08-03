@@ -33,7 +33,12 @@ nodeLinker: hoisted
 # pnpm 10+ gates every dependency lifecycle script by default (supply-chain
 # guard). pnpm 11.3+ reads this MAP, not the older `onlyBuiltDependencies`
 # array — one explicit decision per build-script dependency.
-#   electron → true: its postinstall downloads the platform binary.
+#
+# electron 43 declares NO postinstall: it ships `install.js` as a bin
+# (`install-electron`) and the binary is fetched explicitly, not on install.
+# The entry below is therefore inert today, and kept as the decision record —
+# electron 41/42 did download on postinstall, and electron-builder and native
+# modules will need entries here later.
 allowBuilds:
   electron: true
 
