@@ -1,0 +1,36 @@
+{
+  "name": "dinah",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "The dinah CLI — dev, build, package — and the application-facing config API",
+  "license": "MIT",
+  "bin": {
+    "dinah": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@dinah/core": "workspace:*",
+    "@dinah/runtime-electron": "workspace:*",
+    "@vitejs/plugin-react": "catalog:",
+    "electron": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  }
+}

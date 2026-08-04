@@ -6,6 +6,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
+    // `dist/lib`, not `dist`: Vite empties its outDir, `tsc -b` writes the
+    // declarations, and a build that wipes the other tool's output produces a
+    // package that installs without types — while `tsc -b`, seeing an
+    // up-to-date tsbuildinfo, declines to emit them again.
+    outDir: 'dist/lib',
     lib: {
       entry: 'src/index.ts',
       formats: ['es'],

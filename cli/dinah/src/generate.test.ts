@@ -1,0 +1,64 @@
+import { mkdtempSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { describe, expect, it } from 'vitest'
+import type { AppContext } from './app.js'
+import { generate } from './generate.js'
+
+function fixture(): AppContext {
+  const root = mkdtempSync(join(tmpdir(), 'dinah-generate-'))
+  return {
+    root,
+    configPath: join(root, 'dinah.config.ts'),
+    generatedDir: join(root, '.dinah'),
+    config: {
+      appId: 'com.example.demo',
+      productName: 'Demo & "Co"',
+      window: { width: 1200, height: 800 },
+    },
+  }
+}
+
+function read(app: AppContext, name: string): string {
+  return readFileSync(join(app.generatedDir, name), 'utf8')
+}
+
+describe('generate', () => {
+  it('writes an HTML entry that escapes the product name', () => {
+    const app = fixture()
+    generate(app)
+    expect(read(app, 'index.html')).toContain('<title>Demo &amp; &quot;Co&quot;</title>')
+  })
+
+  it('resolves the framework by name, so nothing needs aliasing', () => {
+    const app = fixture()
+    generate(app)
+    expect(read(app, 'renderer.tsx')).toContain("from '@dinah/workbench'")
+    expect(read(app, 'main.mjs')).toContain("import '@dinah/runtime-electron/main'")
+  })
+
+  it('bakes the resolved config, defaults already applied', () => {
+    const app = fixture()
+    generate(app)
+    const config = read(app, 'config.ts')
+    expect(config).toContain('"appId": "com.example.demo"')
+    expect(config).toContain('"height": 800')
+  })
+
+  it('names no ambient types and lists every generated root explicitly', () => {
+    const app = fixture()
+    generate(app)
+    // The banner is a JSONC comment; strip it before parsing.
+    const tsconfig = JSON.parse(read(app, 'tsconfig.json').replace(/^\/\/.*\n/, '')) as {
+      compilerOptions: { types: string[] }
+      include: string[]
+    }
+    // `vite/client` is unresolvable from an application — TS2688.
+    expect(tsconfig.compilerOptions.types).toEqual([])
+    // TypeScript's wildcards skip dot-directories: anything in `.dinah/` that a
+    // wildcard would have to find is checked by nothing.
+    expect(tsconfig.include).toContain('./renderer.tsx')
+    expect(tsconfig.include).toContain('./config.ts')
+    expect(tsconfig.include).toContain('./env.d.ts')
+  })
+})

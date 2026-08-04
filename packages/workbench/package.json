@@ -7,9 +7,9 @@
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
-      "default": "./dist/workbench.js"
+      "default": "./dist/lib/workbench.js"
     },
-    "./style.css": "./dist/workbench.css",
+    "./style.css": "./dist/lib/workbench.css",
     "./package.json": "./package.json"
   },
   "files": [
