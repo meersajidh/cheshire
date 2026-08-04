@@ -382,16 +382,11 @@ declarations at all — works perfectly through a link and fails on every real i
 Run it:
 
 ```bash
-# 1. pack every package
-for p in packages/core packages/workbench packages/runtime/electron cli/dinah cli/create-dinah; do
-  (cd $p && pnpm pack --pack-destination "$PWD/../../.local/tarballs")
-done
+# 1. build and pack every package into .local/tarballs
+pnpm pack:local
 
-# 2. a real install of the generator
+# 2. generate, install, and run for real
 cd .local/gate
-pnpm add -D file:../tarballs/create-dinah-0.0.0.tgz
-
-# 3. generate, install, and run for real
 pnpm exec create-dinah demo --from-tarballs "$PWD/../tarballs"
 cd demo && pnpm dev && pnpm build && pnpm package --dir
 ```
@@ -399,15 +394,26 @@ cd demo && pnpm dev && pnpm build && pnpm package --dir
 `pnpm exec` rather than `npx` matters: it makes the generator choose pnpm for the app's install,
 and npm never reads the `pnpm-workspace.yaml` overrides that tarball mode writes.
 
-Two traps that will cost you an afternoon each if nobody tells you:
+After that, the loop while you work on the framework is one command plus one install:
 
-**Repacking at an unchanged version is invisible.** The consumer's lockfile pins the _old_
-tarball's integrity, and even `pnpm install --force` reinstalls the stale copy from the store. To
-refresh a consumer you must wipe its `node_modules` **and** its lockfile.
+```bash
+pnpm pack:local --refresh .local/gate/demo     # build → pack → repoint
+(cd .local/gate/demo && pnpm install)
+```
 
-**Framework source is never in a consumer's dev module graph.** After editing framework code:
-rebuild, repack, refresh. Skip a step and your change simply does not appear, with nothing said
-about why.
+`scripts/pack-local.mjs` stamps a **unique version per pack** (`0.0.0-dev.<timestamp>`), which is
+the whole reason that install is enough. While every package sat at `0.0.0`, a repack was
+_invisible_: the consumer's lockfile pinned the old tarball's integrity and pnpm reinstalled that
+copy from the store, `--force` included, so the only way through was wiping `node_modules` **and**
+the lockfile. A stamped version puts the version in the filename too, so the `file:` specifier
+changes and there is nothing stale left to resolve to. `--refresh` rewrites those specifiers, and
+the `overrides:` block, in a consumer that already exists.
+
+The trap the stamping does _not_ remove:
+
+**Framework source is never in a consumer's dev module graph.** After editing framework code you
+must pack again. Skip it and your change simply does not appear, with nothing said about why —
+which is exactly why the script builds before it packs rather than trusting `dist/`.
 
 `.local/gate` and `.local/scratch` are the working consumers. Both are gitignored.
 
@@ -427,8 +433,7 @@ What stage 2 and beyond will touch, and what is deliberately empty today:
 | Runtime abstraction | Electron named directly, inside the runtime package | Phase 4, validated by a Tauri port |
 
 And the gaps that are gaps rather than seams — worth fixing when they get in your way, not before:
-no application icon in a packaged build, no watch on the main process during `dev`, and no pack
-script, so refreshing a consumer is the manual wipe described above.
+no application icon in a packaged build, and no watch on the main process during `dev`.
 
 ---
 

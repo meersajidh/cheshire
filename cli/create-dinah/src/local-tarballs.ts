@@ -66,6 +66,10 @@ function rewriteDependencies(targetDir: string, tarballs: Map<string, string>): 
  * The framework's own cross-references need redirecting too. `pnpm pack`
  * substitutes a version for `workspace:*`, so a packed `dinah` asks for
  * `@dinah/core@0.0.0` — a version no registry has.
+ *
+ * The comment line below is a marker: `scripts/pack-local.mjs --refresh`
+ * replaces everything from it onward when it repoints an existing application.
+ * Change the wording here and change it there.
  */
 function addOverrides(targetDir: string, tarballs: Map<string, string>): void {
   const workspacePath = join(targetDir, 'pnpm-workspace.yaml')

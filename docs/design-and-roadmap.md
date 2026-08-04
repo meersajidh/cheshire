@@ -181,7 +181,9 @@ play-dinah/
 ## 7. Package responsibilities
 
 **core** — foundational services: lifecycle, events, logging, configuration, dependency
-injection.
+injection. Also the two contracts an application declares against: the config contract on
+the barrel, and the contribution contract on `@dinah/core/views` — a separate entry so the
+barrel stays React-free for the main process.
 
 **react** — React bindings for platform services; the component-facing API surface.
 
@@ -205,19 +207,21 @@ An application developer spends nearly all their time in `src/`:
 ```
 my-app/
 ├── src/
+│   ├── index.ts          # the contribution contract — default-exports defineApp({ ... })
 │   ├── features/
 │   ├── views/
 │   ├── commands/
 │   ├── menus/
-│   ├── services/
-│   └── main.tsx
+│   └── services/
 ├── package.json          # scripts call the dinah CLI
 └── dinah.config.ts       # the config contract (premise 3)
 ```
 
 What the application does **not** contain: a process entry file, Electron/Vite config, a
 build pipeline, or any reference to the runtime. dinah owns the entry and generates what
-the entry needs; the application seats into the socket via `dinah.config.ts`.
+the entry needs; the application seats into the socket via two files — `dinah.config.ts`
+says what it *is*, `src/index.ts` says what it *contributes*. `src/index.ts` is the app's
+own file: the generated renderer imports it, and never writes it.
 
 ## 9. Development flow
 
@@ -377,7 +381,9 @@ Sliced so every stage ends with something that runs (premise 8):
 | npm scope | `@dinah/*` |
 | Create package | `create-dinah` (`npm create dinah`) |
 | Tooling CLI | `dinah` |
-| Config contract | `dinah.config.ts` |
+| Config contract | `dinah.config.ts` — `defineConfig({ ... })` |
+| Contribution contract | `src/index.ts` — default-exports `defineApp({ views })` |
+| Contribution entry | `@dinah/core/views`, re-exported through `dinah` |
 | Playground repo | `play-dinah` |
 | First template | `workbench` |
 

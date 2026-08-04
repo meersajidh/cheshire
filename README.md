@@ -43,4 +43,5 @@ install, so the tarball loop is the only proof that anything works.
 
 ## Status
 
-Milestone A, stage 0 — `create → dev → build`. See §13 of the design & roadmap doc.
+Milestone A, stage 1 — an application contributes a view and the workbench renders it.
+Stage 2 (commands & menus) is next. See §13 of the design & roadmap doc.
