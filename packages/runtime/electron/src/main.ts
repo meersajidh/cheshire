@@ -3,9 +3,12 @@ import { app, BrowserWindow, shell } from 'electron'
 import { resolveConfig, type DinahConfig, type ResolvedDinahConfig } from '@dinah/core'
 
 /**
- * What the `dinah` CLI hands to the runtime. Passed as JSON in
- * `DINAH_RUNTIME_OPTIONS` so the runtime never loads TypeScript itself, and the
- * process entry stays a plain, packageable file.
+ * What the generated entry hands to the runtime.
+ *
+ * The runtime never sources these itself. In development the CLI passes them
+ * through the environment; in a packaged app they are baked into the generated
+ * entry at build time. Either way the runtime loads no TypeScript and reads no
+ * config file — it is handed a plain object and starts.
  */
 export interface RuntimeOptions {
   config: DinahConfig
@@ -13,18 +16,6 @@ export interface RuntimeOptions {
   devServerUrl?: string
   /** Production: directory containing the built `index.html`. */
   rendererDir?: string
-}
-
-const OPTIONS_ENV = 'DINAH_RUNTIME_OPTIONS'
-
-function readOptions(): RuntimeOptions {
-  const raw = process.env[OPTIONS_ENV]
-  if (!raw) {
-    throw new Error(
-      `dinah: ${OPTIONS_ENV} is not set. The Electron runtime is launched by the dinah CLI, not directly.`,
-    )
-  }
-  return JSON.parse(raw) as RuntimeOptions
 }
 
 function createWindow(options: RuntimeOptions, config: ResolvedDinahConfig): BrowserWindow {
@@ -64,8 +55,8 @@ function createWindow(options: RuntimeOptions, config: ResolvedDinahConfig): Bro
   return window
 }
 
-export function start(): void {
-  const options = readOptions()
+/** Boot the Electron runtime. Called by the framework-generated process entry. */
+export function start(options: RuntimeOptions): void {
   const config = resolveConfig(options.config)
 
   app.setName(config.productName)
@@ -84,5 +75,3 @@ export function start(): void {
     if (process.platform !== 'darwin') app.quit()
   })
 }
-
-start()

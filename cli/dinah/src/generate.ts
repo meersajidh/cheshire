@@ -23,8 +23,10 @@ export interface GeneratedFiles {
   html: string
   /** Renderer entry the HTML loads. */
   renderer: string
-  /** Electron main entry — the file the runtime process starts from. */
-  main: string
+  /** Electron entry for `dinah dev` — options arrive through the environment. */
+  devMain: string
+  /** Electron entry for a packaged app — options are baked in; this one is bundled. */
+  prodMain: string
   /** The tsconfig that typechecks the application. */
   tsconfig: string
 }
@@ -33,16 +35,21 @@ export interface GeneratedFiles {
 export function generate(app: AppContext): GeneratedFiles {
   mkdirSync(app.generatedDir, { recursive: true })
 
+  const prodDir = join(app.generatedDir, 'prod')
+  mkdirSync(prodDir, { recursive: true })
+
   const files: GeneratedFiles = {
     html: join(app.generatedDir, 'index.html'),
     renderer: join(app.generatedDir, 'renderer.tsx'),
-    main: join(app.generatedDir, 'main.mjs'),
+    devMain: join(app.generatedDir, 'main.mjs'),
+    prodMain: join(prodDir, 'main.mjs'),
     tsconfig: join(app.generatedDir, 'tsconfig.json'),
   }
 
   write(files.html, indexHtml(app))
   write(files.renderer, rendererEntry())
-  write(files.main, mainEntry())
+  write(files.devMain, devMainEntry())
+  write(files.prodMain, prodMainEntry(app))
   write(files.tsconfig, tsconfig())
   write(join(app.generatedDir, 'config.ts'), configModule(app))
   write(join(app.generatedDir, 'env.d.ts'), ambientTypes())
@@ -91,13 +98,43 @@ export const config: ResolvedDinahConfig = ${JSON.stringify(app.config, null, 2)
 }
 
 /**
- * Electron's entry point. A bare specifier, because `.dinah/` sits inside the
- * application and Node's resolution walks up to the application's own
- * `node_modules` — the same lookup the packaged app performs.
+ * Electron's entry point in development. A bare specifier resolves because
+ * `.dinah/` sits inside the application, and Node walks up to the application's
+ * own `node_modules`.
+ *
+ * The dev server's address is not known when this file is written — the port is
+ * settled at listen time — so the options arrive through the environment rather
+ * than baked in, as they are in the production entry.
  */
-function mainEntry(): string {
+function devMainEntry(): string {
   return `${JS_BANNER}
-import '@dinah/runtime-electron/main'`
+import { start } from '@dinah/runtime-electron/main'
+
+start(JSON.parse(process.env.DINAH_RUNTIME_OPTIONS))`
+}
+
+/**
+ * Electron's entry point in a packaged application, and the reason the main
+ * process is bundled at all.
+ *
+ * A packaged app ships **no `node_modules`**: this file is bundled with the
+ * runtime inlined, leaving only `electron` and node builtins external. That is
+ * what lets the application declare `dinah` as a *dev* dependency and never
+ * name the runtime (premise 5) — nothing has to be resolvable at runtime except
+ * what Electron itself provides.
+ *
+ * The renderer is found relative to this file, since the bundle and the built
+ * renderer are siblings inside the asar.
+ */
+function prodMainEntry(app: AppContext): string {
+  return `${JS_BANNER}
+import { fileURLToPath } from 'node:url'
+import { start } from '@dinah/runtime-electron/main'
+
+start({
+  config: ${JSON.stringify(app.config, null, 2)},
+  rendererDir: fileURLToPath(new URL('../renderer', import.meta.url)),
+})`
 }
 
 /**

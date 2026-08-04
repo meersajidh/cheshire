@@ -27,6 +27,7 @@
     "@dinah/runtime-electron": "workspace:*",
     "@vitejs/plugin-react": "catalog:",
     "electron": "catalog:",
+    "electron-builder": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
   },

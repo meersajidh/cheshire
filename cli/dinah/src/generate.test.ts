@@ -12,7 +12,7 @@ function fixture(): AppContext {
     configPath: join(root, 'dinah.config.ts'),
     generatedDir: join(root, '.dinah'),
     config: {
-      appId: 'com.example.demo',
+      appId: 'com.example.scratch',
       productName: 'Demo & "Co"',
       window: { width: 1200, height: 800 },
     },
@@ -34,14 +34,28 @@ describe('generate', () => {
     const app = fixture()
     generate(app)
     expect(read(app, 'renderer.tsx')).toContain("from '@dinah/workbench'")
-    expect(read(app, 'main.mjs')).toContain("import '@dinah/runtime-electron/main'")
+    expect(read(app, 'main.mjs')).toContain("from '@dinah/runtime-electron/main'")
+  })
+
+  it('writes a dev entry fed by the environment and a production entry that is not', () => {
+    const app = fixture()
+    generate(app)
+    // The dev server's port is only settled at listen time, after this runs.
+    expect(read(app, 'main.mjs')).toContain('process.env.DINAH_RUNTIME_OPTIONS')
+
+    // A packaged app has no CLI to hand it anything: config is baked in, and
+    // the renderer is found relative to the bundle it ships beside.
+    const prod = read(app, 'prod/main.mjs')
+    expect(prod).not.toContain('process.env')
+    expect(prod).toContain('"appId": "com.example.scratch"')
+    expect(prod).toContain("new URL('../renderer', import.meta.url)")
   })
 
   it('bakes the resolved config, defaults already applied', () => {
     const app = fixture()
     generate(app)
     const config = read(app, 'config.ts')
-    expect(config).toContain('"appId": "com.example.demo"')
+    expect(config).toContain('"appId": "com.example.scratch"')
     expect(config).toContain('"height": 800')
   })
 

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { build } from './build.js'
 import { dev } from './dev.js'
 import { DinahCliError } from './errors.js'
+import { packageApp } from './pack.js'
 
 const USAGE = `
   dinah — build desktop applications
@@ -11,22 +12,28 @@ const USAGE = `
     dinah <command>
 
   Commands
-    dev      Start the application in development
-    build    Typecheck the application and compile it
+    dev        Start the application in development
+    build      Typecheck the application and compile it
+    package    Build, then produce a distributable application
 
   Options
+    --dir            package only: an unpacked directory, no installer
     -h, --help       Show this message
     -v, --version    Show the dinah version
 `
 
 async function main(argv: string[]): Promise<void> {
-  const [command] = argv
+  const [command, ...rest] = argv
 
   switch (command) {
     case 'dev':
       return dev()
     case 'build':
-      return build()
+      await build()
+      return
+    case 'package':
+      await packageApp({ dir: rest.includes('--dir') })
+      return
     case '-h':
     case '--help':
     case undefined:

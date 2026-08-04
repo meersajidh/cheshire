@@ -14,7 +14,7 @@ import { rendererConfig } from './renderer-config.js'
  */
 export async function dev(root?: string): Promise<void> {
   const app = await loadApp(root)
-  generate(app)
+  const files = generate(app)
 
   const server = await createServer(rendererConfig(app, 'dev'))
   await server.listen()
@@ -31,7 +31,7 @@ export async function dev(root?: string): Promise<void> {
 
   const child = launchElectron({
     binary,
-    entry: `${app.generatedDir}/main.mjs`,
+    entry: files.devMain,
     cwd: app.root,
     runtimeOptions: { config: app.config, devServerUrl: url },
   })
