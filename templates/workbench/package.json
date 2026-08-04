@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "@dinah/workbench": "{{dinahVersion}}",
+    "@types/react": "{{reactTypesVersion}}",
     "dinah": "{{dinahVersion}}",
     "react": "{{reactVersion}}",
     "react-dom": "{{reactVersion}}"

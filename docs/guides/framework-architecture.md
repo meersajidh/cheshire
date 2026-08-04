@@ -16,8 +16,8 @@
 > **Reading order.** [premises](../premises.md) → [design & roadmap](../design-and-roadmap.md)
 > → this → [the tour](codebase-tour.md).
 >
-> **Status.** Written at the close of stage 0. Everything described here exists and runs;
-> where a thing is deliberately not built yet, it says so.
+> **Status.** Written at the close of stage 0, refreshed at the close of stage 1. Everything
+> described here exists and runs; where a thing is deliberately not built yet, it says so.
 
 ---
 
@@ -68,8 +68,9 @@ belong to dinah.
 |  | The application owns | dinah owns |
 | --- | --- | --- |
 | Configuration | `dinah.config.ts` | every tsconfig, the Vite configs, the packaging config |
+| Contributions | `src/index.ts` — what the app declares | the contract it declares against, and the shell that renders it |
 | Entry points | _none — they are generated for it_ | the HTML entry, the renderer entry, the Electron main entry |
-| UI | its own views and components (stage 1+) | the workbench shell that hosts them |
+| UI | its own views and components | the workbench shell that hosts them |
 | Generated | _nothing — it is written for them_ | `.dinah/` |
 | Build output | its own renderer bundle | its own packages, shipped built |
 
@@ -89,7 +90,7 @@ directory and is gitignored — the same convention as `.next/`, `.nuxt/` and `.
 flowchart TD
   subgraph APP["Application — its own repo, e.g. demo"]
     CFG["dinah.config.ts"]
-    SRC["src/ — the app's domain"]
+    SRC["src/ — the app's domain<br/>index.ts declares its contributions"]
     GEN[".dinah/ — GENERATED, gitignored<br/>index.html · renderer.tsx · config.ts<br/>main.mjs · prod/main.mjs · tsconfig.json · env.d.ts"]
     OUT["dist/ — packaged application"]
   end
@@ -103,6 +104,7 @@ flowchart TD
   CLI -->|writes| GEN
   GEN -->|imports| WB
   GEN -->|imports| RT
+  GEN -->|imports| SRC
   SRC -->|typechecked with| GEN
   GEN --> OUT
 ```
@@ -175,13 +177,41 @@ Three details in the generated tsconfig are load-bearing, and each was paid for 
 **The problem.** An app contributes views, commands and menus. Something has to find them and
 register them.
 
-**dinah's answer: not yet, deliberately.** Stage 0 renders the shell and nothing else; the
-template's `src/index.ts` is inert, and no generated file imports it. Stage 1 is where a
-contribution API arrives, and it will be designed against a view that actually renders rather
-than guessed at in advance.
+**dinah's answer: one default export, imported by the generated renderer.** `src/index.ts`
+default-exports `defineApp({ views })`, and the renderer the framework writes imports it by
+relative path. There is no registry to call, no lifecycle hook to implement, and no scanning of
+the filesystem for files that look like views — the app hands over a value, and the workbench
+renders it.
 
-What already exists is the seam it will use: the generated renderer is a file the framework
-rewrites at will, in the app's directory, with the app's `src/` already inside the typecheck.
+```ts
+// src/index.ts, in the application
+import { defineApp } from 'dinah'
+import { Welcome } from './views/Welcome'
+
+export default defineApp({
+  views: [{ id: 'welcome', title: 'Welcome', component: Welcome }],
+})
+```
+
+Three properties of that shape are the point of it:
+
+- **Declarative, not imperative.** The app says what exists; it never says what is on screen.
+  Which view is active is the workbench's state, so layout persistence (stage 3) has somewhere to
+  live that the app cannot contradict.
+- **`defineApp` is identity at run time.** Like `defineConfig`, it exists so the developer gets
+  completion and a type error at the line they wrote, rather than a stack from a generated file.
+  What survives it is validated again by `resolveApp`, whose messages name `src/index.ts`.
+- **A view is a React component and nothing else.** No base class, no lifecycle, nothing imported
+  from the runtime. That keeps [premise 5](../premises.md) intact: React is the platform's UI
+  language under Electron and would be under Tauri too, so naming it is not naming the runtime.
+
+The contract lives in `@dinah/core` on a **separate entry**, `@dinah/core/views`, and re-exports
+through `dinah` so an application still names one package. The split is load-bearing:
+`@dinah/runtime-electron` imports the core barrel from the main process, and the barrel must stay
+React-free — with `skipLibCheck` on, an unresolved `react` inside a `.d.ts` degrades to `any` in
+silence rather than erroring.
+
+Commands and menus (stage 2) extend the same object. Nothing about the mechanism changes.
 
 ### 3.5 Staying correct while you edit
 
@@ -190,10 +220,11 @@ it.
 
 **dinah's answer:**
 
-- The **renderer** is served by Vite, with hot module replacement. Editing app or shell code
-  updates the window without a restart.
-- The **main process** is not watched. In stage 0 it is entirely framework code, and framework
-  code is fixed for the duration of a dev session — restart the app to pick up a new one.
+- The **renderer** is served by Vite, with hot module replacement. Editing a view updates the
+  window without a restart — app code is inside the dev module graph, reached through the
+  generated renderer's import of `../src/index`.
+- The **main process** is not watched. It is entirely framework code, and framework code is fixed
+  for the duration of a dev session — restart the app to pick up a new one.
 - **Types** are checked on `build`, not on `dev` (§3.3).
 
 ---
@@ -240,7 +271,7 @@ external — they are baked into the Electron binary and exist only at run time,
 bundled and do not need to be. Everything else is concatenated into one file.
 
 **Therefore a packaged application ships no `node_modules` at all.** The asar contains the main
-bundle, the renderer bundle and a `package.json`: about 388 KB for the stage-0 app. That in turn
+bundle, the renderer bundle and a `package.json`: about 396 KB for the stage-1 app. That in turn
 is what lets an application declare `dinah` as a **devDependency** and never name the runtime,
 which is [premise 5](../premises.md) holding in practice rather than in principle.
 
@@ -311,7 +342,9 @@ Consolidation, documentation and refactoring queue _behind_ the next runnable mi
 | --- | --- |
 | **application** / **app** | What a developer builds with dinah. dinah's customer. |
 | **the framework** | This repository: packages, template, CLIs. |
-| **the config contract** | `dinah.config.ts` — the one file an app writes for the framework. |
+| **the config contract** | `dinah.config.ts` — what the application *is*. |
+| **the contribution contract** | `src/index.ts` — what the application *contributes*. |
+| **view** | An id, a title, and a React component. What the workbench renders. |
 | **derivatives** | The generated contents of `.dinah/`. Rewritten every run, never edited. |
 | **the seam** | The published surface: what an app can import and nothing more. |
 | **main process** | Electron's Node process. Owns windows and the desktop. Framework-only. |
@@ -327,5 +360,5 @@ Consolidation, documentation and refactoring queue _behind_ the next runnable mi
 - **The roadmap and package factoring** — [design & roadmap](../design-and-roadmap.md).
 - **What is true at all times** — [premises](../premises.md).
 - **What the code actually says** — [the codebase tour](codebase-tour.md).
-- **Views, commands, menus, layout persistence** — stages 1 through 3. Not built; not designed
-  here in advance.
+- **Commands, menus, layout persistence** — stages 2 and 3. Not built; not designed here in
+  advance.

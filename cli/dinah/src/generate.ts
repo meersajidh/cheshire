@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { AppContext } from './app.js'
 
@@ -47,7 +47,7 @@ export function generate(app: AppContext): GeneratedFiles {
   }
 
   write(files.html, indexHtml(app))
-  write(files.renderer, rendererEntry())
+  write(files.renderer, rendererEntry(hasAppEntry(app)))
   write(files.devMain, devMainEntry())
   write(files.prodMain, prodMainEntry(app))
   write(files.tsconfig, tsconfig())
@@ -77,13 +77,30 @@ function indexHtml(app: AppContext): string {
 </html>`
 }
 
-function rendererEntry(): string {
+/**
+ * The renderer entry, and the join between the two halves of the program: the
+ * framework's shell on one side, `../src/index` — the application's own entry —
+ * on the other. This import is the only place the framework reads application
+ * code, and it is a plain relative import because `.dinah/` lives inside the
+ * application.
+ *
+ * An application without an entry still runs. Deleting `src/index.ts` is a
+ * mistake, but it is not a reason to hand the developer a module-resolution
+ * failure from a file they did not write.
+ */
+function rendererEntry(hasEntry: boolean): string {
   return `${JS_BANNER}
 import { mountWorkbench } from '@dinah/workbench'
 import '@dinah/workbench/style.css'
 import { config } from './config'
+${hasEntry ? `import app from '../src/index'` : 'const app = {} // no src/index.ts — nothing contributed'}
 
-mountWorkbench({ config })`
+mountWorkbench({ config, app })`
+}
+
+/** `src/index.ts` or `src/index.tsx` — either resolves for TypeScript and Vite. */
+function hasAppEntry(app: AppContext): boolean {
+  return ['index.ts', 'index.tsx'].some((name) => existsSync(join(app.root, 'src', name)))
 }
 
 /**

@@ -102,9 +102,19 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.18
 
   packages/core:
+    dependencies:
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
     devDependencies:
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.18
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

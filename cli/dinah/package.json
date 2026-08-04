@@ -32,6 +32,7 @@
     "vite": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "catalog:"
+    "@types/node": "catalog:",
+    "@types/react": "catalog:"
   }
 }

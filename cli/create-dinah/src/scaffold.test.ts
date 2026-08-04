@@ -19,7 +19,11 @@ function template(): string {
 
 function generate(name: string): string {
   const target = join(mkdtempSync(join(tmpdir(), 'dinah-app-')), name)
-  scaffold(template(), target, deriveIdentity(name), { dinah: '1.2.3', react: '^19.2.7' })
+  scaffold(template(), target, deriveIdentity(name), {
+    dinah: '1.2.3',
+    react: '^19.2.7',
+    reactTypes: '^19.2.17',
+  })
   return target
 }
 
@@ -56,7 +60,7 @@ describe('scaffold', () => {
 
   it('refuses to generate over an existing application', () => {
     const target = generate('demo')
-    expect(() => scaffold(template(), target, deriveIdentity('demo'), { dinah: '1', react: '1' })).toThrow(
+    expect(() => scaffold(template(), target, deriveIdentity('demo'), { dinah: '1', react: '1', reactTypes: '1' })).toThrow(
       ScaffoldError,
     )
   })

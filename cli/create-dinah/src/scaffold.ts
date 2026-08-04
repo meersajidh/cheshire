@@ -15,6 +15,7 @@ export class ScaffoldError extends Error {
 export interface Versions {
   dinah: string
   react: string
+  reactTypes: string
 }
 
 /** Files whose placeholders are substituted. Anything else is copied verbatim. */
@@ -55,6 +56,7 @@ export function scaffold(
     productName: identity.productName,
     dinahVersion: versions.dinah,
     reactVersion: versions.react,
+    reactTypesVersion: versions.reactTypes,
   })
 }
 

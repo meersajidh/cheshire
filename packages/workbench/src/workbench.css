@@ -84,9 +84,58 @@
   color: var(--dinah-fg-muted);
 }
 
+.dinah-view-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dinah-view-tab {
+  display: block;
+  width: 100%;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dinah-view-tab:hover {
+  background: color-mix(in srgb, var(--dinah-accent) 12%, transparent);
+}
+
+.dinah-view-tab[aria-current='true'] {
+  background: var(--dinah-accent);
+  color: #fff;
+}
+
 .dinah-editor-area {
   grid-area: editor;
   overflow: auto;
+}
+
+.dinah-view {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.dinah-view-header {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--dinah-border);
+  color: var(--dinah-fg-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dinah-view-body {
+  flex: 1;
+  padding: 16px;
 }
 
 .dinah-empty-state {

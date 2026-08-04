@@ -29,6 +29,9 @@ const USAGE = `
  */
 const REACT_VERSION = '^19.2.7'
 
+/** React's types, which an application needs from the moment it writes a view. */
+const REACT_TYPES_VERSION = '^19.2.17'
+
 async function main(argv: string[]): Promise<void> {
   if (argv.includes('-h') || argv.includes('--help')) {
     console.log(USAGE)
@@ -107,7 +110,7 @@ function versions(): Versions {
     readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
   ) as { version: string }
 
-  return { dinah: manifest.version, react: REACT_VERSION }
+  return { dinah: manifest.version, react: REACT_VERSION, reactTypes: REACT_TYPES_VERSION }
 }
 
 function init(targetDir: string): void {

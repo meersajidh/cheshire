@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -23,6 +23,13 @@ function read(app: AppContext, name: string): string {
   return readFileSync(join(app.generatedDir, name), 'utf8')
 }
 
+/** Gives the fixture an application entry, as every generated app has. */
+function withEntry(app: AppContext, name = 'index.ts'): AppContext {
+  mkdirSync(join(app.root, 'src'), { recursive: true })
+  writeFileSync(join(app.root, 'src', name), 'export default {}\n', 'utf8')
+  return app
+}
+
 describe('generate', () => {
   it('writes an HTML entry that escapes the product name', () => {
     const app = fixture()
@@ -35,6 +42,28 @@ describe('generate', () => {
     generate(app)
     expect(read(app, 'renderer.tsx')).toContain("from '@dinah/workbench'")
     expect(read(app, 'main.mjs')).toContain("from '@dinah/runtime-electron/main'")
+  })
+
+  it('joins the application to the shell through its own entry', () => {
+    const app = withEntry(fixture())
+    generate(app)
+    expect(read(app, 'renderer.tsx')).toContain("import app from '../src/index'")
+    expect(read(app, 'renderer.tsx')).toContain('mountWorkbench({ config, app })')
+  })
+
+  it('still renders a workbench when the application has no entry', () => {
+    const app = fixture()
+    generate(app)
+    // A missing `src/index.ts` is the developer's mistake; a module-resolution
+    // failure in a generated file is not a useful way to tell them so.
+    expect(read(app, 'renderer.tsx')).not.toContain("from '../src/index'")
+    expect(read(app, 'renderer.tsx')).toContain('const app = {}')
+  })
+
+  it('accepts a .tsx application entry', () => {
+    const app = withEntry(fixture(), 'index.tsx')
+    generate(app)
+    expect(read(app, 'renderer.tsx')).toContain("import app from '../src/index'")
   })
 
   it('writes a dev entry fed by the environment and a production entry that is not', () => {

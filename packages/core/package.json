@@ -9,6 +9,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./views": {
+      "types": "./dist/views.d.ts",
+      "default": "./dist/views.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -19,7 +23,16 @@
     "typecheck": "tsc -b",
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
+  "peerDependencies": {
+    "react": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@types/react": "catalog:",
     "typescript": "catalog:"
   }
 }
