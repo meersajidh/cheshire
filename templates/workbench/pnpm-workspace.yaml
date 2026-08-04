@@ -1,0 +1,5 @@
+# Flat, real-dir node_modules — not pnpm's default isolated/symlinked linker.
+# The isolated linker uses junctions on Windows, which electron-builder does not
+# follow when collecting binaries: the packaged app ships incomplete and crashes
+# on launch. Keep this setting.
+nodeLinker: hoisted

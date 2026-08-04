@@ -1,0 +1,17 @@
+{
+  "name": "{{name}}",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "dinah dev",
+    "build": "dinah build",
+    "package": "dinah package"
+  },
+  "devDependencies": {
+    "@dinah/workbench": "{{dinahVersion}}",
+    "dinah": "{{dinahVersion}}",
+    "react": "{{reactVersion}}",
+    "react-dom": "{{reactVersion}}"
+  }
+}

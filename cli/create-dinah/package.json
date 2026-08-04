@@ -1,0 +1,22 @@
+{
+  "name": "create-dinah",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Generate a dinah desktop application",
+  "license": "MIT",
+  "bin": {
+    "create-dinah": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b && node scripts/copy-template.mjs",
+    "typecheck": "tsc -b",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}
