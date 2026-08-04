@@ -1,0 +1,331 @@
+# Framework architecture
+
+> **What this is.** The shape of dinah as a _framework_ — the handful of problems any framework
+> of this kind has to solve, the answer dinah picked for each, and why. It is the conceptual
+> layer under [the codebase tour](codebase-tour.md): the tour walks the code, this explains the
+> pattern the code is an instance of.
+>
+> **Who it is for.** An engineer comfortable with TypeScript and React who has _used_ Next.js or
+> Vite but never opened one. No Electron background assumed.
+>
+> **What it is not.** Not a decision record — [the premises](../premises.md) hold those, and
+> where this document explains a decision it points at them rather than restating them. Not a
+> roadmap either; [design & roadmap](../design-and-roadmap.md) owns the structure, the package
+> list and the stage plan, and this document assumes it.
+>
+> **Reading order.** [premises](../premises.md) → [design & roadmap](../design-and-roadmap.md)
+> → this → [the tour](codebase-tour.md).
+>
+> **Status.** Written at the close of stage 0. Everything described here exists and runs;
+> where a thing is deliberately not built yet, it says so.
+
+---
+
+## 1. Library versus framework: who calls whom
+
+A **library** is code you call. You own the program, you reach for the library when you need it,
+and it has no opinion about the rest of your application.
+
+A **framework** inverts that. It owns the program and calls _you_. You supply the pieces it asks
+for, in the places it looks, and it decides when they run.
+
+```mermaid
+flowchart LR
+  subgraph LIB["Using a library"]
+    A["your program<br/>owns the entry point"] -->|calls| B["lodash<br/>date-fns<br/>react-dom"]
+  end
+  subgraph FW["Using a framework"]
+    C["dinah<br/>owns the entry point"] -->|calls| D["your dinah.config.ts<br/>your src/"]
+  end
+```
+
+This is **inversion of control** — _don't call us, we'll call you_. React is a mild example: you
+write components, React decides when to render them. Next.js is a strong one, and dinah is the
+same strength. An application never writes the HTML entry, never writes the module that mounts
+the shell, never writes the Electron main process, and never configures the bundler.
+
+**What it costs:** freedom at the edges. You cannot restructure the boot sequence, swap the
+bundler, or add a build step, because you do not own the files those live in.
+
+**What it buys:** everything at the edges is already correct, uniformly, for every application —
+including the parts nobody wants to re-derive per app: the renderer's sandbox settings, how the
+window is created, how the app is packaged, which flags a development launch needs on Linux.
+
+> **Why a framework and not a starter template.** A template — "copy this repo and go" — hands
+> over the same files without the inversion. The moment an app owns the entry, every app's copy
+> drifts on its own, and one fix has to be applied N times by N people who each have to be told.
+> The inversion is what makes a fix land everywhere at once. It is also why the generated entry
+> is **rewritten on every run** rather than scaffolded once: a file you regenerate is a file the
+> framework still owns.
+
+---
+
+## 2. The ownership line
+
+Everything below is downstream of one boundary: which files belong to the application, and which
+belong to dinah.
+
+|  | The application owns | dinah owns |
+| --- | --- | --- |
+| Configuration | `dinah.config.ts` | every tsconfig, the Vite configs, the packaging config |
+| Entry points | _none — they are generated for it_ | the HTML entry, the renderer entry, the Electron main entry |
+| UI | its own views and components (stage 1+) | the workbench shell that hosts them |
+| Generated | _nothing — it is written for them_ | `.dinah/` |
+| Build output | its own renderer bundle | its own packages, shipped built |
+
+Two properties are worth naming, because they are the ones that decay quietly if nobody watches.
+
+**dinah arrives built.** What an application installs is compiled JavaScript, type declarations
+and a stylesheet — no framework TypeScript source at all. An app's build therefore compiles app
+code only, the same relationship it has with every other dependency
+([premise 4](../premises.md)). The consequence for you, on day one: after editing framework
+source you must **rebuild and repack**, or your change silently does not appear in a consumer,
+with nothing said about why.
+
+**Generated files live in the application, not the framework.** `.dinah/` sits in the app's own
+directory and is gitignored — the same convention as `.next/`, `.nuxt/` and `.svelte-kit/`.
+
+```mermaid
+flowchart TD
+  subgraph APP["Application — its own repo, e.g. demo"]
+    CFG["dinah.config.ts"]
+    SRC["src/ — the app's domain"]
+    GEN[".dinah/ — GENERATED, gitignored<br/>index.html · renderer.tsx · config.ts<br/>main.mjs · prod/main.mjs · tsconfig.json · env.d.ts"]
+    OUT["dist/ — packaged application"]
+  end
+  subgraph FW["dinah — installed into node_modules"]
+    CORE["@dinah/core<br/>the config contract"]
+    WB["@dinah/workbench<br/>the shell, built"]
+    RT["@dinah/runtime-electron<br/>window, lifecycle"]
+    CLI["dinah<br/>dev · build · package"]
+  end
+  CLI -->|reads| CFG
+  CLI -->|writes| GEN
+  GEN -->|imports| WB
+  GEN -->|imports| RT
+  SRC -->|typechecked with| GEN
+  GEN --> OUT
+```
+
+---
+
+## 3. Five problems, and how dinah solves them
+
+Every framework in this family answers the same five questions. The answers are what make one
+framework feel different from another.
+
+### 3.1 Finding the application
+
+**The problem.** The CLI is a binary in `node_modules`. It has to work out which directory is
+the application and where its code lives.
+
+**dinah's answer: the config file is the marker.** `dinah dev` looks for `dinah.config.ts` in the
+current directory. Present means this is an application; absent means the developer is in the
+wrong place, and the error says so and names the fix.
+
+This is the same convention as `next.config.js` or `vite.config.ts`, with one difference: for
+dinah the file is not optional. It carries the app's identity — `appId`, `productName` — which a
+desktop application cannot be built without.
+
+### 3.2 Reading a config written in the application's language
+
+**The problem.** `dinah.config.ts` is TypeScript. Node does not run TypeScript, and the CLI needs
+the value inside it before any bundler has started.
+
+**dinah's answer: Vite's module runner loads it, once.** `runnerImport` compiles and evaluates
+the file in-process, and the CLI then applies defaults with `resolveConfig`. The result is a
+plain object that travels onward — into a generated module for the renderer, and into the
+Electron process as either an environment variable (development) or a value baked into the
+bundle (packaged).
+
+The property that matters: **the config is resolved exactly once, by the only process that has a
+TypeScript-capable loader.** Neither the renderer nor the Electron main process ever reads a
+config file or parses TypeScript.
+
+### 3.3 Joining the framework and the application into one program
+
+**The problem.** The framework has a shell, and the application has a config and some code. Some
+file has to import both and start something. Whoever owns that file owns the boot sequence.
+
+**dinah's answer: generated files in the application's directory.** On every run, `dinah` writes
+`.dinah/` into the app: the HTML entry, the renderer entry that mounts the workbench, the config
+as a module, the Electron entries, a tsconfig and an ambient CSS declaration. Every file is
+banner-marked as generated, and edits are lost on the next run.
+
+The alternative — keeping the entry inside the framework package and reaching the app through
+virtual module specifiers — was rejected. It forces the framework to ship its source, and the app
+ends up holding both source and built output with nothing deciding which its imports resolve to.
+Writing a few files into the app is the cheaper half of that trade, and it buys one thing
+outright: because the importer physically lives in the app's directory, `@dinah/workbench` and
+`react` resolve by name from the app's own `node_modules`. Nothing has to be aliased into
+existence.
+
+Three details in the generated tsconfig are load-bearing, and each was paid for once:
+
+- **`types: []`.** Naming `vite/client` fails with TS2688, because Vite is the framework's
+  dependency and is not resolvable from the application. The generated ambient `declare module
+  '*.css'` replaces the one thing the app needed from it.
+- **Every root listed explicitly.** TypeScript's wildcards skip dot-directories, so a file inside
+  `.dinah/` that a wildcard would have to find is checked by nothing at all — silently.
+- **`build` typechecks and `dev` does not.** A dev server that refuses to reload because a type
+  is momentarily wrong is a worse tool.
+
+### 3.4 Discovering what the application declared
+
+**The problem.** An app contributes views, commands and menus. Something has to find them and
+register them.
+
+**dinah's answer: not yet, deliberately.** Stage 0 renders the shell and nothing else; the
+template's `src/index.ts` is inert, and no generated file imports it. Stage 1 is where a
+contribution API arrives, and it will be designed against a view that actually renders rather
+than guessed at in advance.
+
+What already exists is the seam it will use: the generated renderer is a file the framework
+rewrites at will, in the app's directory, with the app's `src/` already inside the typecheck.
+
+### 3.5 Staying correct while you edit
+
+**The problem.** Two processes, two build outputs, and a developer editing code in the middle of
+it.
+
+**dinah's answer:**
+
+- The **renderer** is served by Vite, with hot module replacement. Editing app or shell code
+  updates the window without a restart.
+- The **main process** is not watched. In stage 0 it is entirely framework code, and framework
+  code is fixed for the duration of a dev session — restart the app to pick up a new one.
+- **Types** are checked on `build`, not on `dev` (§3.3).
+
+---
+
+## 4. The pipeline, end to end
+
+```mermaid
+sequenceDiagram
+  participant D as developer
+  participant CLI as dinah CLI
+  participant V as Vite dev server
+  participant E as Electron
+
+  D->>CLI: pnpm dev
+  CLI->>CLI: find dinah.config.ts
+  CLI->>CLI: runnerImport + resolveConfig
+  CLI->>CLI: generate .dinah/
+  CLI->>V: createServer + listen
+  V-->>CLI: http://localhost:5173/
+  CLI->>CLI: is the Electron binary present?
+  CLI->>E: spawn(main.mjs, dev flags)
+  Note over CLI,E: config + dev URL travel in DINAH_RUNTIME_OPTIONS
+  E->>E: start(options) → BrowserWindow
+  E->>V: loadURL(dev server)
+  V-->>E: the workbench, hot-reloading
+```
+
+`build` and `package` share the first three steps and diverge after:
+
+```mermaid
+flowchart LR
+  L["load config"] --> G["generate .dinah/"]
+  G --> T["tsc --noEmit<br/>app code is a gate"]
+  T --> R["vite build → renderer bundle"]
+  R --> M["vite build (ssr) → main bundle"]
+  M --> P["electron-builder<br/>asar + installer"]
+```
+
+Two things about that last pair deserve emphasis, because they are the reason the packaging works
+the way it does.
+
+**The main process is bundled, with the runtime inlined.** `electron` and the Node builtins stay
+external — they are baked into the Electron binary and exist only at run time, so they cannot be
+bundled and do not need to be. Everything else is concatenated into one file.
+
+**Therefore a packaged application ships no `node_modules` at all.** The asar contains the main
+bundle, the renderer bundle and a `package.json`: about 388 KB for the stage-0 app. That in turn
+is what lets an application declare `dinah` as a **devDependency** and never name the runtime,
+which is [premise 5](../premises.md) holding in practice rather than in principle.
+
+The trap under it: electron-builder collects production dependencies in a pass of its own,
+_outside_ the `files` patterns, and only an explicit `!node_modules/**` stops it. Without both
+defences — dev-only dependencies _and_ the negation — an app ships Vite, TypeScript and
+electron-builder inside its own installer.
+
+---
+
+## 5. What Electron adds that a web framework does not
+
+Next.js has one runtime target: a browser, plus a server you do not ship. A desktop framework has
+two processes in one shipped artifact, and a native binary underneath.
+
+**Two processes, one program.** The **main** process is Node with the desktop APIs — windows,
+menus, dialogs, the filesystem. The **renderer** is a browser page. dinah owns both. An app's code
+runs only in the renderer, and never names the runtime: no Electron modules, no IPC channels, no
+process or window APIs ([premise 5](../premises.md)). The runtime *interfaces* that will make
+that portable arrive in phase 4, validated by an actual Tauri port rather than guessed at now.
+
+**The renderer is treated as web content, because it is.** `contextIsolation: true`,
+`nodeIntegration: false`, `sandbox: true`, in development and in production alike. Since app code
+never reaches those APIs anyway, none of it is a compromise. Links the app does not own open in
+the user's browser, not in a chrome-less Electron window.
+
+**The binary is not installed for you.** Electron 43 declares no postinstall — it ships its
+downloader as a bin and expects someone to call it. Nobody does, so `dinah dev` checks for the
+binary and fetches it. Without that, a generated app's very first `pnpm dev` dies on a cryptic
+missing-path error from inside `electron/index.js`.
+
+**Development needs flags production must never have.** On Linux, an unpackaged launch passes
+`--no-sandbox`: Ubuntu 22+ AppArmor blocks Electron's unprivileged-userns helper, and nothing
+SUIDs `chrome-sandbox` inside `node_modules`, so the sandbox helper cannot start at all. A real
+installation is unaffected, because the installer's postinstall does SUID it.
+
+> This is **not** `webPreferences.sandbox`, which stays `true` everywhere. They are different
+> settings with confusingly similar names, and the flag is dev-only and Linux-only. The reasoning
+> lives at the call site in `cli/dinah/src/electron.ts` — keep it there.
+
+---
+
+## 6. Where dinah is deliberately different
+
+**A real install is the only proof.** Workspace links resolve source paths and hide packaging
+failures — an `exports` entry pointing at a `.ts` file works perfectly through a link and fails
+on every real install. So dinah's playground and every gate consume the framework from a **packed
+tarball**, from the very first run. This is not caution; it is the rule that caught, during stage
+0, a package that installed with no type declarations at all because one build step emptied the
+directory another had written to.
+
+**No plugin system.** Views, commands and menus contributed by an application are the platform's
+ordinary surface, not a plugin mechanism. First-party surface only.
+
+**Build with vision.** Scope and direction come from the product owner. There is no
+evidence-gating and no "wait for a second consumer" argument here; the one thing that gets
+escalated rather than decided quietly is a genuinely hard-to-reverse choice — a published API
+name, a persisted format, a wire protocol.
+
+**Momentum over meta-work.** Every stage ends with something that runs, and it is actually run.
+Consolidation, documentation and refactoring queue _behind_ the next runnable milestone.
+
+---
+
+## 7. Vocabulary
+
+| Term | Meaning |
+| --- | --- |
+| **application** / **app** | What a developer builds with dinah. dinah's customer. |
+| **the framework** | This repository: packages, template, CLIs. |
+| **the config contract** | `dinah.config.ts` — the one file an app writes for the framework. |
+| **derivatives** | The generated contents of `.dinah/`. Rewritten every run, never edited. |
+| **the seam** | The published surface: what an app can import and nothing more. |
+| **main process** | Electron's Node process. Owns windows and the desktop. Framework-only. |
+| **renderer** | The browser page. Where app UI runs. |
+| **asar** | Electron's archive format for an app's files inside a package. |
+| **the proof gate** | pack tarballs → generate an app → build → run it, on real artifacts. |
+| **workbench** | The VS Code-like shell: activity bar, sidebar, editor area, status bar. |
+
+---
+
+## 8. What this document does not cover
+
+- **The roadmap and package factoring** — [design & roadmap](../design-and-roadmap.md).
+- **What is true at all times** — [premises](../premises.md).
+- **What the code actually says** — [the codebase tour](codebase-tour.md).
+- **Views, commands, menus, layout persistence** — stages 1 through 3. Not built; not designed
+  here in advance.

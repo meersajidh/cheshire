@@ -27,8 +27,8 @@ docs/        premises and architecture
 ## Docs
 
 - [docs/premises.md](docs/premises.md) — the 8 founding premises. Upstream of every decision.
-- [docs/framework-design-and-architecture.md](docs/framework-design-and-architecture.md) —
-  structure, packages, CLIs, development flow, roadmap.
+- [docs/design-and-roadmap.md](docs/design-and-roadmap.md) — structure, packages, CLIs,
+  development flow, roadmap.
 
 ## Development
 
@@ -43,4 +43,4 @@ install, so the tarball loop is the only proof that anything works.
 
 ## Status
 
-Milestone A, stage 0 — `create → dev → build`. See §13 of the architecture doc.
+Milestone A, stage 0 — `create → dev → build`. See §13 of the design & roadmap doc.

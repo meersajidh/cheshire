@@ -1,10 +1,15 @@
-# dinah — Framework Design & Architecture
+# dinah — Design & Roadmap
 
 > **Version:** 0.1 (living document) · **Date:** 2026-08-03
 >
 > Upstream: [premises.md](premises.md). This document describes how dinah is structured
 > and built; the premises say what is true at all times. Where the two disagree, the
 > premises win or are amended explicitly.
+>
+> Downstream: [guides/framework-architecture.md](guides/framework-architecture.md) explains the
+> framework pattern this structure is an instance of, and
+> [guides/codebase-tour.md](guides/codebase-tour.md) walks the code that implements it. Both are
+> onboarding material — they never decide anything.
 
 ---
 
