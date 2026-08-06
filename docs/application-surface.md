@@ -1,4 +1,4 @@
-# The application surface — how an application layers on dinah
+# The application surface — how an application layers on mogget
 
 > **Status:** Design intent, written 2026-08-05. Covers the whole surface an application will
 > eventually meet, most of which is not built. **Marked throughout:** ✅ built · ◐ in progress ·
@@ -22,24 +22,24 @@
 │  The application            e.g. a clinical practice      │
 │                             management layer              │
 ├──────────────────────────────────────────────────────────┤
-│  dinah                      shell, commands, design,      │
+│  mogget                      shell, commands, design,      │
 │                             services, build, packaging    │
 ├──────────────────────────────────────────────────────────┤
 │  Electron                   runtime, replaceable (phase 4)│
 └──────────────────────────────────────────────────────────┘
 ```
 
-Two products, two repositories (premise 2). The application depends on released `@dinah/*`
-packages and never on framework source. dinah supplies every layer below the domain, including
+Two products, two repositories (premise 2). The application depends on released `@mogget/*`
+packages and never on framework source. mogget supplies every layer below the domain, including
 the ones the application would otherwise have to assemble: the process model, the build, the
 shell, and the services.
 
 ### An application declares into a system; it never implements one
 
-dinah's capabilities come as **systems** — coherent, whole, already built (design & roadmap §2).
+mogget's capabilities come as **systems** — coherent, whole, already built (design & roadmap §2).
 The application's job at every one of them is to *declare*, and the system's job is to do:
 
-| System | Services | The application declares | dinah does — with no application code |
+| System | Services | The application declares | mogget does — with no application code |
 | --- | --- | --- | --- |
 | **design system** | components · icons · tokens · modes | which tokens, which mode default, which components it composes | the components, the icons, the token contract, light/dark, the switcher |
 | **command system** | commands · shortcuts · menus · palette | that a command exists, its title, its default shortcut, where it appears | the registry, chord matching, the menu bar, context menus, the palette, the shortcuts editor |
@@ -57,7 +57,7 @@ persisted against — a call can only be made.
 **A system is reached through its services, and a service through one typed hook.**
 
 ```tsx
-import { useCommands, useSettings } from '@dinah/react'
+import { useCommands, useSettings } from '@mogget/react'
 
 function Toolbar() {
   const commands = useCommands()
@@ -67,7 +67,7 @@ function Toolbar() {
 ```
 
 No service ids, no registry, no provider to learn. Both prior attempts used a service locator
-(`useService(CommandServiceId)`) across ~30 services; dinah has an order of magnitude fewer, so
+(`useService(CommandServiceId)`) across ~30 services; mogget has an order of magnitude fewer, so
 the indirection would cost every reader a hop and buy nothing. Host-side services arrive the
 same way in spirit — as a context object handed to the host entry, not as an import.
 
@@ -85,7 +85,7 @@ platform's ordinary surface.
 
 The distinction is not cosmetic. It removes an entire category of machinery:
 
-| A plugin platform needs | dinah needs |
+| A plugin platform needs | mogget needs |
 | --- | --- |
 | A manifest file, parsed and validated at runtime | Typed values in `src/index.ts`, checked at build |
 | A sandbox per extension — iframes, a `view://` scheme, per-view CSP tiers | One renderer, one policy |
@@ -94,7 +94,7 @@ The distinction is not cosmetic. It removes an entire category of machinery:
 | Lazy activation events (`onCommand`, `onView`) | An import graph the bundler already understands |
 
 The prior attempt (`new-ru-soam`) carries all of it, because its bundles are separately loaded
-artifacts. dinah keeps its **contribution vocabulary** — activity bar items, view containers,
+artifacts. mogget keeps its **contribution vocabulary** — activity bar items, view containers,
 views with a location, panels, status bar items, menus that reference command ids — and drops the
 delivery mechanism entirely. Same words, no manifest.
 
@@ -105,7 +105,7 @@ menu is a build error naming the application's own file, not a runtime warning i
 
 ## 2. Two surfaces
 
-An application meets dinah at exactly two places. Everything else is dinah's.
+An application meets mogget at exactly two places. Everything else is mogget's.
 
 ```mermaid
 flowchart TB
@@ -114,7 +114,7 @@ flowchart TB
     HOST["Application host<br/><i>its own backend</i>"]
   end
 
-  subgraph dinah["dinah"]
+  subgraph mogget["mogget"]
     WS["Shell Surface<br/><i>title bar · body · status bar<br/>views · commands · keybindings · menus</i>"]
     HS["Host Surface<br/><i>lifecycle · storage · auth<br/>logging · platform services</i>"]
   end
@@ -131,7 +131,7 @@ flowchart TB
   HS --> H
   R <-->|"preload<br/>(a membrane, framework-private)"| M
   M -. brokers .-> H
-  UI <-.->|"direct channel<br/>dinah brokers it, the app never names it"| HOST
+  UI <-.->|"direct channel<br/>mogget brokers it, the app never names it"| HOST
 ```
 
 **The Shell Surface** is what the application contributes to the UI, and it runs in the
@@ -143,7 +143,7 @@ privileged, framework-owned, and holds the window and the OS; putting domain cod
 framework's most trusted process exactly as trustworthy as the application in it.
 
 **Neither surface names the runtime** (premise 5). No Electron module, no IPC channel, no protocol
-scheme, no `window.dinah`. The preload bridge is a *membrane* — a place messages pass through,
+scheme, no `window.mogget`. The preload bridge is a *membrane* — a place messages pass through,
 never a place logic lives — and it is framework-private in both directions.
 
 ---
@@ -155,7 +155,7 @@ application splits its own files however it likes; `src/index.ts` is the assembl
 
 ```ts
 // src/index.ts — the whole file, however large the application gets
-import { defineApp } from 'dinah'
+import { defineApp } from 'mogget'
 import { views } from './views'
 import { commands } from './commands'
 import { menus } from './menus'
@@ -170,18 +170,18 @@ export default defineApp({ views, commands, menus })
 | **view** | `{ id, title, component }` — a React component the shell renders | ✅ stage 1 |
 | **command** | `{ id, title, shortcut?, run }` — a named action, id namespaced `ns.verb` | ◐ stage 2b |
 | **menu** | `{ label, items }` where an item **references a command id** — a menu never holds a handler | ◐ stage 2b |
-| **keybinding** | The command's `shortcut`, written in dinah's portable form (`'Mod+1'`) | ◐ stage 2b |
+| **keybinding** | The command's `shortcut`, written in mogget's portable form (`'Mod+1'`) | ◐ stage 2b |
 | **activity bar item** | The top-level navigation rail: icon, label, and the view container it reveals | ○ phase 2 |
 | **view container** | A titled group of views, placed in the primary or auxiliary sidebar | ○ phase 2 |
 | **panel view** | A view that lives in the bottom panel — output, problems, a log | ○ phase 2 |
 | **editor** | Opens *for an input* (a record id, a file, a query) rather than being toggled | ○ phase 2 |
 | **status bar item** | `{ id, text, tooltip?, command?, alignment, priority }` | ○ phase 2 |
 | **settings schema** | The application's own preferences: keys, types, defaults, labels | ○ phase 3 |
-| **theme / font contribution** | Selects or extends `@dinah/ui`'s token contract — a CSS-var block, never a component rewrite | ○ phase 2–3 |
+| **theme / font contribution** | Selects or extends `@mogget/ui`'s token contract — a CSS-var block, never a component rewrite | ○ phase 2–3 |
 
 ### 3.2 Where things live, and who decides
 
-The regions are dinah's, and their names are stable:
+The regions are mogget's, and their names are stable:
 
 The shell's anatomy is **three vertical zones**, plus an overlay plane above all of them:
 
@@ -220,9 +220,9 @@ An application influences what is on screen the same way a user does: **by runni
 `ctx.showView('welcome')` inside a command handler is a request to the shell, not an
 assignment to its state.
 
-### 3.3 What dinah owns outright, and an application never contributes
+### 3.3 What mogget owns outright, and an application never contributes
 
-- **The title bar and window controls.** dinah draws them (stage 2a). An application contributes
+- **The title bar and window controls.** mogget draws them (stage 2a). An application contributes
   menus into the strip and nothing else.
 - **The command palette.** Every contributed command appears in it automatically, with its
   keybinding. There is no "register with the palette" step — that is what one command registry
@@ -231,7 +231,7 @@ assignment to its state.
   a *default*, and the user outranks it.
 - **Layout persistence, docking, resizing, and restore-on-launch.**
 - **Notifications, progress, and dialogs** — services an application *calls*, not regions it fills.
-- **Theming and typography tokens.** dinah ships a coherent set; an application extends it rather
+- **Theming and typography tokens.** mogget ships a coherent set; an application extends it rather
   than assembling its own.
 
 ---
@@ -251,20 +251,20 @@ wrong:
   every long operation would compete with the UI for a single thread.
 - **In main.** Main owns the windows, the menus, the OS integration, and the preload membrane. It
   is the framework's most privileged process. Putting domain code there makes that process exactly
-  as trustworthy as the application inside it, and makes the boundary dinah is built on
+  as trustworthy as the application inside it, and makes the boundary mogget is built on
   unenforceable.
 - **In its own process.** The application's backend is the application's, with its own lifecycle,
   its own crash domain, and no privilege over the window.
 
-So: a **host process**, owned by the application, brokered by dinah.
+So: a **host process**, owned by the application, brokered by mogget.
 
 ### 4.2 The channel
 
-dinah brokers a **direct channel** between the renderer and the host at startup, after which
+mogget brokers a **direct channel** between the renderer and the host at startup, after which
 messages travel between the application's two halves without passing through main's event loop.
 
 The application never names the transport. It writes a call and gets a result; whether that is a
-`MessagePort`, a socket, or something a Tauri backend provides is dinah's business and changes at
+`MessagePort`, a socket, or something a Tauri backend provides is mogget's business and changes at
 phase 4 without the application noticing. This is premise 5 applied to the backend rather than to
 the window.
 
@@ -273,18 +273,18 @@ Two consequences worth stating plainly:
 - **Main no longer sees application calls.** It observes the resource access the host performs,
   not the intent behind it. Under premise 6 — everything is first-party — this is not a security
   hole, but it is an auditing question that phase 3 has to answer deliberately.
-- **Two channels will exist**: the application's own, and dinah's framework-private bridge. Their
-  boundary has to stay legible, or an application author reaches for the wrong one. dinah's is not
+- **Two channels will exist**: the application's own, and mogget's framework-private bridge. Their
+  boundary has to stay legible, or an application author reaches for the wrong one. mogget's is not
   reachable from application code at all, which is most of the answer.
 
 ### 4.3 What the application writes
 
 The same rule as everywhere else — **the framework owns the entry.** The application supplies a
-module; dinah imports it, wires it, and starts it. Sketch, not a committed API:
+module; mogget imports it, wires it, and starts it. Sketch, not a committed API:
 
 ```ts
 // src/host/index.ts — the application's backend, one module
-import { defineHost } from 'dinah/host'
+import { defineHost } from 'mogget/host'
 
 export default defineHost({
   async start(ctx) {
@@ -307,14 +307,14 @@ const patients = await host.listPatients('smith')
 
 ## 5. Systems and their services
 
-What dinah provides, grouped by system, with **which zone** each service runs in. Renderer-side
-services reach an application as one typed hook each, from `@dinah/react`; host-side services are
+What mogget provides, grouped by system, with **which zone** each service runs in. Renderer-side
+services reach an application as one typed hook each, from `@mogget/react`; host-side services are
 handed to the host entry as a context object. Nothing is reached by importing a runtime module or
 by touching a global.
 
 | System | Service | What it does | Zone | Status |
 | --- | --- | --- | --- | --- |
-| *(foundation)* | **config** | `dinah.config.ts` — appId, productName, window, and which systems are on | build-time | ✅ |
+| *(foundation)* | **config** | `mogget.config.ts` — appId, productName, window, and which systems are on | build-time | ✅ |
 | **shell** | **window chrome** | Frameless title bar, controls, maximize state | renderer ↔ main, framework-private | ◐ stage 2a |
 | **shell** | **layout** | Which regions exist, visibility, sizes, docking, persistence | renderer | ○ stage 3 / phase 2 |
 | **shell** | **notifications · dialogs** | The overlay plane — transient UI an application requests | renderer | ○ phase 2 |
@@ -322,7 +322,7 @@ by touching a global.
 | **command** | **commands** | Registry, execution, the palette | renderer | ◐ stage 2b |
 | **command** | **shortcuts** | Chord matching and an application's defaults | renderer | ◐ stage 2b |
 | **command** | **menus** | Menu bar and context menus, resolved from command ids | renderer | ◐ stage 2b |
-| **design** | **components · icons · tokens** | `@dinah/ui`: primitives, the token contract, light/dark | renderer | ○ phase 2–3 |
+| **design** | **components · icons · tokens** | `@mogget/ui`: primitives, the token contract, light/dark | renderer | ○ phase 2–3 |
 | **customization** | **settings** | Schema, defaults, the editor UI, change events | both | ○ phase 3 |
 | **customization** | **overrides** | The user's keybinding and theme choices, one persistence layer, `user > app > platform` | both | ○ phase 3 |
 | **storage** | **db** | Schema, migrations, queries, transactions | host | ○ phase 3 |
@@ -335,7 +335,7 @@ by touching a global.
 | *(runtime)* | **runtime interfaces** | `WindowService`, `MenuService`, `DialogService`, `FileSystemService` | all | ○ phase 4, validated by the Tauri port |
 
 **Never available to an application, in any phase:** `electron` and its modules, node builtins from
-the renderer, IPC channel names, protocol schemes, `window.dinah`, or the preload. Enforced from
+the renderer, IPC channel names, protocol schemes, `window.mogget`, or the preload. Enforced from
 day one, and the reason the phase-4 port is a port rather than a rewrite.
 
 ## 6. How the surface maps onto the roadmap
@@ -358,18 +358,18 @@ a layout that survives a restart.
 Surfaced, not decided (premise 7). Each is hard to reverse and belongs to the stage that builds it.
 
 > Two earlier items on this list are now settled by the template decision in
-> [design & roadmap](design-and-roadmap.md) §5: a template is a **configuration of dinah's
-> systems, declared in `dinah.config.ts`**. So "is the host opt-in" and "does dinah ship a store"
-> both answer themselves — a template can only switch on a system dinah ships, and switching it
+> [design & roadmap](design-and-roadmap.md) §5: a template is a **configuration of mogget's
+> systems, declared in `mogget.config.ts`**. So "is the host opt-in" and "does mogget ship a store"
+> both answer themselves — a template can only switch on a system mogget ships, and switching it
 > on is a declaration. What survives of each is the *shape* of that declaration, below.
 
 1. **What does the host declaration look like, and what does it cost when absent?** A template
    that declares no host should produce an application that never starts a third process — the
    declaration has to reach packaging, not just runtime.
-2. **What is the store's contract?** dinah ships the store (settled above), so the open question
+2. **What is the store's contract?** mogget ships the store (settled above), so the open question
    is its surface: schema and migration format, transaction shape, and — the part that is
    genuinely hard to reverse — where encryption and key management sit.
-3. **Does dinah ship authentication, or only credential storage?** Keychain-backed secrets are
+3. **Does mogget ship authentication, or only credential storage?** Keychain-backed secrets are
    clearly platform. A session and identity model may be the application's.
 4. **Does a view declare its location, or does a view container?** VS Code puts it on the
    container. It decides how an application expresses "this view can be in the sidebar or the
@@ -386,14 +386,14 @@ Surfaced, not decided (premise 7). Each is hard to reverse and belongs to the st
 
 | Term | Meaning |
 | --- | --- |
-| **system** | A coherent capability dinah ships whole — design, command, shell, customization, storage, identity, devtools. An application declares into one, through its services; it never implements one. |
-| **the design system** | Components, icons, and the token contract. `@dinah/ui`. |
+| **system** | A coherent capability mogget ships whole — design, command, shell, customization, storage, identity, devtools. An application declares into one, through its services; it never implements one. |
+| **the design system** | Components, icons, and the token contract. `@mogget/ui`. |
 | **the command system** | Commands, shortcuts, menus, context menus, the palette. A menu item is a command reference. |
 | **the Shell Surface** | What an application contributes to the UI. Views, commands, menus — everything that runs in the renderer. |
-| **the shell** | The root of the renderer: title bar, body, status bar, and the overlay plane. `@dinah/shell`. |
+| **the shell** | The root of the renderer: title bar, body, status bar, and the overlay plane. `@mogget/shell`. |
 | **the body** | The shell's middle zone, which holds the regions. Named to avoid colliding with *activity bar*. |
 | **the Host Surface** | The application's own backend process, and the platform services it calls. |
-| **host process** | The third process. Application-owned, dinah-brokered, no privilege over the window. |
+| **host process** | The third process. Application-owned, mogget-brokered, no privilege over the window. |
 | **the membrane** | The preload. Messages pass through it; logic never lives in it. Framework-private. |
 | **region** | A named area of the body — activity bar, side bars, editor area, panel. Which regions exist is per-template, not fixed. |
 | **view container** | A titled group of views, placed in a region by the shell. |

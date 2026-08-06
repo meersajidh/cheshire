@@ -6,21 +6,21 @@ import { deriveIdentity, InvalidNameError } from './identity.js'
 import { scaffold, ScaffoldError } from './scaffold.js'
 
 function template(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'dinah-template-'))
+  const dir = mkdtempSync(join(tmpdir(), 'mogget-template-'))
   mkdirSync(join(dir, 'src'))
   writeFileSync(
     join(dir, 'package.json'),
-    JSON.stringify({ name: '{{name}}', devDependencies: { dinah: '{{dinahVersion}}' } }, null, 2),
+    JSON.stringify({ name: '{{name}}', devDependencies: { mogget: '{{moggetVersion}}' } }, null, 2),
   )
-  writeFileSync(join(dir, 'dinah.config.ts'), "appId: '{{appId}}', productName: '{{productName}}'")
+  writeFileSync(join(dir, 'mogget.config.ts'), "appId: '{{appId}}', productName: '{{productName}}'")
   writeFileSync(join(dir, '_gitignore'), 'node_modules\n')
   return dir
 }
 
 function generate(name: string): string {
-  const target = join(mkdtempSync(join(tmpdir(), 'dinah-app-')), name)
+  const target = join(mkdtempSync(join(tmpdir(), 'mogget-app-')), name)
   scaffold(template(), target, deriveIdentity(name), {
-    dinah: '1.2.3',
+    mogget: '1.2.3',
     react: '^19.2.7',
     reactTypes: '^19.2.17',
     pnpm: '11.17.0',
@@ -47,8 +47,8 @@ describe('scaffold', () => {
   it('fills every placeholder', () => {
     const target = generate('demo')
     expect(readFileSync(join(target, 'package.json'), 'utf8')).toContain('"name": "demo"')
-    expect(readFileSync(join(target, 'package.json'), 'utf8')).toContain('"dinah": "1.2.3"')
-    expect(readFileSync(join(target, 'dinah.config.ts'), 'utf8')).toContain(
+    expect(readFileSync(join(target, 'package.json'), 'utf8')).toContain('"mogget": "1.2.3"')
+    expect(readFileSync(join(target, 'mogget.config.ts'), 'utf8')).toContain(
       "appId: 'com.example.demo', productName: 'Demo'",
     )
   })
@@ -61,7 +61,7 @@ describe('scaffold', () => {
 
   it('refuses to generate over an existing application', () => {
     const target = generate('demo')
-    expect(() => scaffold(template(), target, deriveIdentity('demo'), { dinah: '1', react: '1', reactTypes: '1', pnpm: '1' })).toThrow(
+    expect(() => scaffold(template(), target, deriveIdentity('demo'), { mogget: '1', react: '1', reactTypes: '1', pnpm: '1' })).toThrow(
       ScaffoldError,
     )
   })

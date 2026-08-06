@@ -1,4 +1,4 @@
-import { defineConfig } from 'dinah'
+import { defineConfig } from 'mogget'
 
 export default defineConfig({
   appId: '{{appId}}',

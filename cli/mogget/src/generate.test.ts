@@ -6,11 +6,11 @@ import type { AppContext } from './app.js'
 import { generate } from './generate.js'
 
 function fixture(): AppContext {
-  const root = mkdtempSync(join(tmpdir(), 'dinah-generate-'))
+  const root = mkdtempSync(join(tmpdir(), 'mogget-generate-'))
   return {
     root,
-    configPath: join(root, 'dinah.config.ts'),
-    generatedDir: join(root, '.dinah'),
+    configPath: join(root, 'mogget.config.ts'),
+    generatedDir: join(root, '.mogget'),
     config: {
       appId: 'com.example.scratch',
       productName: 'Demo & "Co"',
@@ -40,8 +40,8 @@ describe('generate', () => {
   it('resolves the framework by name, so nothing needs aliasing', () => {
     const app = fixture()
     generate(app)
-    expect(read(app, 'renderer.tsx')).toContain("from '@dinah/shell'")
-    expect(read(app, 'main.mjs')).toContain("from '@dinah/runtime-electron/main'")
+    expect(read(app, 'renderer.tsx')).toContain("from '@mogget/shell'")
+    expect(read(app, 'main.mjs')).toContain("from '@mogget/runtime-electron/main'")
   })
 
   it('joins the application to the shell through its own entry', () => {
@@ -70,7 +70,7 @@ describe('generate', () => {
     const app = fixture()
     generate(app)
     // The dev server's port is only settled at listen time, after this runs.
-    expect(read(app, 'main.mjs')).toContain('process.env.DINAH_RUNTIME_OPTIONS')
+    expect(read(app, 'main.mjs')).toContain('process.env.MOGGET_RUNTIME_OPTIONS')
 
     // A packaged app has no CLI to hand it anything: config is baked in, and
     // the renderer is found relative to the bundle it ships beside.
@@ -98,7 +98,7 @@ describe('generate', () => {
     }
     // `vite/client` is unresolvable from an application — TS2688.
     expect(tsconfig.compilerOptions.types).toEqual([])
-    // TypeScript's wildcards skip dot-directories: anything in `.dinah/` that a
+    // TypeScript's wildcards skip dot-directories: anything in `.mogget/` that a
     // wildcard would have to find is checked by nothing.
     expect(tsconfig.include).toContain('./renderer.tsx')
     expect(tsconfig.include).toContain('./config.ts')

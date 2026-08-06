@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, shell } from 'electron'
-import { resolveConfig, type DinahConfig, type ResolvedDinahConfig } from '@dinah/core'
+import { resolveConfig, type MoggetConfig, type ResolvedMoggetConfig } from '@mogget/core'
 
 /**
  * What the generated entry hands to the runtime.
@@ -11,14 +11,14 @@ import { resolveConfig, type DinahConfig, type ResolvedDinahConfig } from '@dina
  * config file — it is handed a plain object and starts.
  */
 export interface RuntimeOptions {
-  config: DinahConfig
+  config: MoggetConfig
   /** Dev: the Vite server to load. Mutually exclusive with `rendererDir`. */
   devServerUrl?: string
   /** Production: directory containing the built `index.html`. */
   rendererDir?: string
 }
 
-function createWindow(options: RuntimeOptions, config: ResolvedDinahConfig): BrowserWindow {
+function createWindow(options: RuntimeOptions, config: ResolvedMoggetConfig): BrowserWindow {
   const window = new BrowserWindow({
     width: config.window.width,
     height: config.window.height,
@@ -49,7 +49,7 @@ function createWindow(options: RuntimeOptions, config: ResolvedDinahConfig): Bro
   } else if (options.rendererDir) {
     void window.loadFile(join(options.rendererDir, 'index.html'))
   } else {
-    throw new Error('dinah: runtime options must carry either `devServerUrl` or `rendererDir`.')
+    throw new Error('mogget: runtime options must carry either `devServerUrl` or `rendererDir`.')
   }
 
   return window

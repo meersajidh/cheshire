@@ -1,9 +1,9 @@
 {
-  "name": "dinah-framework",
-  "version": "0.0.0",
+  "name": "mogget-framework",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "dinah — a platform for building desktop applications",
+  "description": "mogget — a platform for building desktop applications",
   "packageManager": "pnpm@11.17.0",
   "engines": {
     "node": ">=22"
@@ -15,7 +15,7 @@
     "test": "vitest run",
     "check": "pnpm lint && pnpm build && pnpm typecheck && pnpm test",
     "pack:local": "node scripts/pack-local.mjs",
-    "clean": "pnpm -r exec rm -rf dist && rm -rf .dinah"
+    "clean": "pnpm -r exec rm -rf dist && rm -rf .mogget"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

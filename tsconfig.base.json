@@ -16,7 +16,14 @@
     "exactOptionalPropertyTypes": true,
 
     "declaration": true,
-    "sourceMap": true,
+
+    // Off, because every package is `files: ["dist"]` and a map would ship with
+    // it — publishing the source of a framework that promises consumers only
+    // built output. `declarationMap` stays off for the same reason: it points at
+    // `src/`, which is never in the tarball, so "go to definition" would resolve
+    // to nothing. The tsc builds are unbundled and unminified, so dist lines
+    // track src lines anyway and a map buys almost nothing locally.
+    "sourceMap": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   }

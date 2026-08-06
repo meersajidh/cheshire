@@ -1,34 +1,34 @@
 :root {
-  --dinah-bg: #ffffff;
-  --dinah-bg-raised: #f3f3f3;
-  --dinah-bg-accent: #2c2c32;
-  --dinah-fg: #1f1f1f;
-  --dinah-fg-muted: #6b6b6b;
-  --dinah-fg-on-accent: #f5f5f5;
-  --dinah-border: #e0e0e0;
-  --dinah-accent: #4c6ef5;
-  --dinah-font:
+  --mogget-bg: #ffffff;
+  --mogget-bg-raised: #f3f3f3;
+  --mogget-bg-accent: #2c2c32;
+  --mogget-fg: #1f1f1f;
+  --mogget-fg-muted: #6b6b6b;
+  --mogget-fg-on-accent: #f5f5f5;
+  --mogget-border: #e0e0e0;
+  --mogget-accent: #4c6ef5;
+  --mogget-font:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, sans-serif;
-  --dinah-font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+  --mogget-font-mono: ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --dinah-bg: #1e1e21;
-    --dinah-bg-raised: #252529;
-    --dinah-bg-accent: #17171a;
-    --dinah-fg: #e8e8ea;
-    --dinah-fg-muted: #9a9aa2;
-    --dinah-fg-on-accent: #e8e8ea;
-    --dinah-border: #313136;
-    --dinah-accent: #7c8cf8;
+    --mogget-bg: #1e1e21;
+    --mogget-bg-raised: #252529;
+    --mogget-bg-accent: #17171a;
+    --mogget-fg: #e8e8ea;
+    --mogget-fg-muted: #9a9aa2;
+    --mogget-fg-on-accent: #e8e8ea;
+    --mogget-border: #313136;
+    --mogget-accent: #7c8cf8;
   }
 }
 
 /* The shell's root. Two of the three vertical zones exist today — the body and
    the status bar; the title bar arrives with stage 2a, and the body's regions
    are what the layout service will make optional per template. */
-.dinah-shell {
+.mogget-shell {
   display: grid;
   grid-template-columns: 48px 260px 1fr;
   grid-template-rows: 1fr 24px;
@@ -37,63 +37,63 @@
     'status   status  status';
   height: 100vh;
   overflow: hidden;
-  background: var(--dinah-bg);
-  color: var(--dinah-fg);
-  font-family: var(--dinah-font);
+  background: var(--mogget-bg);
+  color: var(--mogget-fg);
+  font-family: var(--mogget-font);
   font-size: 13px;
   line-height: 1.5;
 }
 
-.dinah-activity-bar {
+.mogget-activity-bar {
   grid-area: activity;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-top: 10px;
-  background: var(--dinah-bg-accent);
-  color: var(--dinah-fg-on-accent);
+  background: var(--mogget-bg-accent);
+  color: var(--mogget-fg-on-accent);
 }
 
-.dinah-activity-mark {
+.mogget-activity-mark {
   display: grid;
   place-items: center;
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: var(--dinah-accent);
+  background: var(--mogget-accent);
   color: #fff;
   font-weight: 600;
 }
 
-.dinah-sidebar {
+.mogget-sidebar {
   grid-area: sidebar;
   padding: 12px 14px;
-  background: var(--dinah-bg-raised);
-  border-right: 1px solid var(--dinah-border);
+  background: var(--mogget-bg-raised);
+  border-right: 1px solid var(--mogget-border);
   overflow: auto;
 }
 
-.dinah-sidebar-title {
+.mogget-sidebar-title {
   margin: 0;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--dinah-fg-muted);
+  color: var(--mogget-fg-muted);
 }
 
-.dinah-sidebar-hint {
+.mogget-sidebar-hint {
   margin: 8px 0 0;
-  color: var(--dinah-fg-muted);
+  color: var(--mogget-fg-muted);
 }
 
-.dinah-view-list {
+.mogget-view-list {
   margin: 8px 0 0;
   padding: 0;
   list-style: none;
 }
 
-.dinah-view-tab {
+.mogget-view-tab {
   display: block;
   width: 100%;
   padding: 5px 8px;
@@ -106,42 +106,42 @@
   cursor: pointer;
 }
 
-.dinah-view-tab:hover {
-  background: color-mix(in srgb, var(--dinah-accent) 12%, transparent);
+.mogget-view-tab:hover {
+  background: color-mix(in srgb, var(--mogget-accent) 12%, transparent);
 }
 
-.dinah-view-tab[aria-current='true'] {
-  background: var(--dinah-accent);
+.mogget-view-tab[aria-current='true'] {
+  background: var(--mogget-accent);
   color: #fff;
 }
 
-.dinah-editor-area {
+.mogget-editor-area {
   grid-area: editor;
   overflow: auto;
 }
 
-.dinah-view {
+.mogget-view {
   display: flex;
   flex-direction: column;
   min-height: 100%;
 }
 
-.dinah-view-header {
+.mogget-view-header {
   padding: 8px 16px;
-  border-bottom: 1px solid var(--dinah-border);
-  color: var(--dinah-fg-muted);
+  border-bottom: 1px solid var(--mogget-border);
+  color: var(--mogget-fg-muted);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.dinah-view-body {
+.mogget-view-body {
   flex: 1;
   padding: 16px;
 }
 
-.dinah-empty-state {
+.mogget-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -152,34 +152,34 @@
   text-align: center;
 }
 
-.dinah-empty-title {
+.mogget-empty-title {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
 }
 
-.dinah-empty-body {
+.mogget-empty-body {
   margin: 0;
   max-width: 42ch;
-  color: var(--dinah-fg-muted);
+  color: var(--mogget-fg-muted);
 }
 
-.dinah-empty-body code {
-  font-family: var(--dinah-font-mono);
+.mogget-empty-body code {
+  font-family: var(--mogget-font-mono);
   font-size: 0.92em;
 }
 
-.dinah-status-bar {
+.mogget-status-bar {
   grid-area: status;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 0 12px;
-  background: var(--dinah-accent);
+  background: var(--mogget-accent);
   color: #fff;
   font-size: 11px;
 }
 
-.dinah-status-spacer {
+.mogget-status-spacer {
   flex: 1;
 }

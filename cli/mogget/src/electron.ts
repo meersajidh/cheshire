@@ -3,13 +3,13 @@ import type { ChildProcess } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
-import type { RuntimeOptions } from '@dinah/runtime-electron/main'
-import { DinahCliError } from './errors.js'
+import type { RuntimeOptions } from '@mogget/runtime-electron/main'
+import { MoggetCliError } from './errors.js'
 
 const require = createRequire(import.meta.url)
 
 /** Matches the runtime's own contract — options travel as JSON in this variable. */
-const OPTIONS_ENV = 'DINAH_RUNTIME_OPTIONS'
+const OPTIONS_ENV = 'MOGGET_RUNTIME_OPTIONS'
 
 /** The Electron executable, or `undefined` if it has not been downloaded yet. */
 function findElectronBinary(): string | undefined {
@@ -34,19 +34,19 @@ export async function ensureElectronBinary(): Promise<string> {
   const existing = findElectronBinary()
   if (existing) return existing
 
-  console.log('dinah: downloading the Electron runtime (first run only)…')
+  console.log('mogget: downloading the Electron runtime (first run only)…')
   const code = await runToCompletion(process.execPath, [require.resolve('electron/install.js')])
   if (code !== 0) {
-    throw new DinahCliError(
-      `dinah: downloading the Electron runtime failed (exit code ${code}).\n` +
+    throw new MoggetCliError(
+      `mogget: downloading the Electron runtime failed (exit code ${code}).\n` +
         'Check network access, then run the command again.',
     )
   }
 
   const downloaded = findElectronBinary()
   if (!downloaded) {
-    throw new DinahCliError(
-      'dinah: the Electron runtime reported a successful download but no binary is present.\n' +
+    throw new MoggetCliError(
+      'mogget: the Electron runtime reported a successful download but no binary is present.\n' +
         'Remove `node_modules/electron/dist` and install again.',
     )
   }
@@ -77,7 +77,7 @@ function devLaunchFlags(): string[] {
 
 export interface LaunchOptions {
   binary: string
-  /** The generated `.dinah/main.mjs`. */
+  /** The generated `.mogget/main.mjs`. */
   entry: string
   cwd: string
   runtimeOptions: RuntimeOptions

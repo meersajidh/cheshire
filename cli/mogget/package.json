@@ -1,21 +1,22 @@
 {
-  "name": "@mogget/shell",
+  "name": "mogget",
   "version": "0.1.0",
   "type": "module",
-  "description": "The mogget shell \u2014 title bar, body, status bar; the root of the renderer",
+  "description": "The mogget CLI — dev, build, package — and the application-facing config API",
   "license": "MIT",
   "homepage": "https://github.com/meersajidh/mogget",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/meersajidh/mogget.git",
-    "directory": "packages/shell"
+    "directory": "cli/mogget"
   },
   "bugs": "https://github.com/meersajidh/mogget/issues",
   "keywords": [
     "mogget",
     "desktop",
     "framework",
-    "react"
+    "electron",
+    "cli"
   ],
   "engines": {
     "node": ">=22"
@@ -23,36 +24,35 @@
   "publishConfig": {
     "access": "public"
   },
+  "bin": {
+    "mogget": "./dist/cli.js"
+  },
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
-      "default": "./dist/lib/shell.js"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
-    "./style.css": "./dist/lib/shell.css",
     "./package.json": "./package.json"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "vite build && tsc -b",
+    "build": "tsc -b",
     "typecheck": "tsc -b",
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
-  "peerDependencies": {
-    "react": "catalog:",
-    "react-dom": "catalog:"
-  },
   "dependencies": {
-    "@mogget/core": "workspace:^"
-  },
-  "devDependencies": {
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
+    "@mogget/core": "workspace:^",
+    "@mogget/runtime-electron": "workspace:^",
     "@vitejs/plugin-react": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
+    "electron": "catalog:",
+    "electron-builder": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:"
   }
 }

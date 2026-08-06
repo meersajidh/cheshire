@@ -1,9 +1,9 @@
 /**
- * The config contract (premise 3). An application seats into dinah by exporting
- * one of these from `dinah.config.ts`; it authors no entry file, no build
+ * The config contract (premise 3). An application seats into mogget by exporting
+ * one of these from `mogget.config.ts`; it authors no entry file, no build
  * config, and no runtime wiring.
  */
-export interface DinahConfig {
+export interface MoggetConfig {
   /** Reverse-DNS identifier for the packaged application, e.g. `com.example.demo`. */
   appId: string
   /** Human-visible application name — window title, menu bar, installer. */
@@ -18,15 +18,15 @@ export interface WindowConfig {
 }
 
 /** A config with every default filled in. What the runtime actually consumes. */
-export interface ResolvedDinahConfig {
+export interface ResolvedMoggetConfig {
   appId: string
   productName: string
   window: Required<WindowConfig>
 }
 
-/** Thrown when `dinah.config.ts` is not a usable config. */
-export class DinahConfigError extends Error {
-  override readonly name = 'DinahConfigError'
+/** Thrown when `mogget.config.ts` is not a usable config. */
+export class MoggetConfigError extends Error {
+  override readonly name = 'MoggetConfigError'
 }
 
 const WINDOW_DEFAULTS: Required<WindowConfig> = {
@@ -36,9 +36,9 @@ const WINDOW_DEFAULTS: Required<WindowConfig> = {
 
 /**
  * Identity at runtime; the point is the type. Gives an application author
- * completion and errors in `dinah.config.ts` without importing a type.
+ * completion and errors in `mogget.config.ts` without importing a type.
  */
-export function defineConfig(config: DinahConfig): DinahConfig {
+export function defineConfig(config: MoggetConfig): MoggetConfig {
   return config
 }
 
@@ -46,10 +46,10 @@ export function defineConfig(config: DinahConfig): DinahConfig {
  * Validate and apply defaults. Errors name the file and the fix, because the
  * developer reading them is the customer.
  */
-export function resolveConfig(config: DinahConfig): ResolvedDinahConfig {
+export function resolveConfig(config: MoggetConfig): ResolvedMoggetConfig {
   if (config === null || typeof config !== 'object') {
-    throw new DinahConfigError(
-      'dinah.config.ts must default-export a config object. Use `export default defineConfig({ ... })`.',
+    throw new MoggetConfigError(
+      'mogget.config.ts must default-export a config object. Use `export default defineConfig({ ... })`.',
     )
   }
 
@@ -63,10 +63,10 @@ export function resolveConfig(config: DinahConfig): ResolvedDinahConfig {
   }
 }
 
-function requireString(value: unknown, field: keyof DinahConfig, example: string): string {
+function requireString(value: unknown, field: keyof MoggetConfig, example: string): string {
   if (typeof value !== 'string' || value.trim() === '') {
-    throw new DinahConfigError(
-      `dinah.config.ts is missing \`${field}\`. Add it, e.g. \`${field}: '${example}'\`.`,
+    throw new MoggetConfigError(
+      `mogget.config.ts is missing \`${field}\`. Add it, e.g. \`${field}: '${example}'\`.`,
     )
   }
   return value

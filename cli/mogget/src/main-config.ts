@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import type { InlineConfig } from 'vite'
 import type { AppContext } from './app.js'
 
-/** Where `dinah build` leaves the bundled main process. */
+/** Where `mogget build` leaves the bundled main process. */
 export function mainOutDir(app: AppContext): string {
   return join(app.generatedDir, 'dist', 'main')
 }

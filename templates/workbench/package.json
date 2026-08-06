@@ -5,14 +5,14 @@
   "type": "module",
   "packageManager": "pnpm@{{pnpmVersion}}",
   "scripts": {
-    "dev": "dinah dev",
-    "build": "dinah build",
-    "package": "dinah package"
+    "dev": "mogget dev",
+    "build": "mogget build",
+    "package": "mogget package"
   },
   "devDependencies": {
-    "@dinah/shell": "{{dinahVersion}}",
+    "@mogget/shell": "{{moggetVersion}}",
     "@types/react": "{{reactTypesVersion}}",
-    "dinah": "{{dinahVersion}}",
+    "mogget": "{{moggetVersion}}",
     "react": "{{reactVersion}}",
     "react-dom": "{{reactVersion}}"
   }

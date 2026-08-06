@@ -1,9 +1,28 @@
 {
-  "name": "@dinah/runtime-electron",
-  "version": "0.0.0",
+  "name": "@mogget/runtime-electron",
+  "version": "0.1.0",
   "type": "module",
-  "description": "dinah's Electron runtime — process entry, window creation, lifecycle",
+  "description": "mogget's Electron runtime — process entry, window creation, lifecycle",
   "license": "MIT",
+  "homepage": "https://github.com/meersajidh/mogget",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meersajidh/mogget.git",
+    "directory": "packages/runtime/electron"
+  },
+  "bugs": "https://github.com/meersajidh/mogget/issues",
+  "keywords": [
+    "mogget",
+    "desktop",
+    "framework",
+    "electron"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     "./main": {
       "types": "./dist/main.d.ts",
@@ -20,7 +39,7 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@dinah/core": "workspace:*"
+    "@mogget/core": "workspace:^"
   },
   "devDependencies": {
     "electron": "catalog:",

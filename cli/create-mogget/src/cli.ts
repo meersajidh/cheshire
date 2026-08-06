@@ -10,10 +10,10 @@ import { scaffold, ScaffoldError } from './scaffold.js'
 import type { Versions } from './scaffold.js'
 
 const USAGE = `
-  create-dinah — generate a desktop application
+  create-mogget — generate a desktop application
 
   Usage
-    pnpm create dinah <name>
+    pnpm create mogget <name>
 
   Requires pnpm — a generated application declares \`nodeLinker: hoisted\`,
   which npm and yarn have no equivalent for and electron-builder needs.
@@ -26,9 +26,9 @@ const USAGE = `
 `
 
 /**
- * The React the template is generated against. Pinned rather than ranged for
- * the same reason as the dinah version: a generated application starts on a
- * combination that has been run, not one resolved fresh on the day.
+ * The React the template is generated against — a version that has actually been
+ * run together with this generator, not whatever `latest` resolves to on the day.
+ * Caret, so a generated application still collects patches.
  */
 const REACT_VERSION = '^19.2.7'
 
@@ -79,7 +79,7 @@ function parse(argv: string[]): Options {
 
     if (argument === '--from-tarballs') {
       const value = argv[index + 1]
-      if (!value) throw new ScaffoldError('create-dinah: --from-tarballs needs a directory.')
+      if (!value) throw new ScaffoldError('create-mogget: --from-tarballs needs a directory.')
       options.fromTarballs = value
       index += 1
     } else if (argument === '--no-install') {
@@ -87,7 +87,7 @@ function parse(argv: string[]): Options {
     } else if (argument === '--no-git') {
       options.git = false
     } else if (argument.startsWith('-')) {
-      throw new ScaffoldError(`create-dinah: unknown option \`${argument}\`.\n${USAGE}`)
+      throw new ScaffoldError(`create-mogget: unknown option \`${argument}\`.\n${USAGE}`)
     } else {
       options.name ??= argument
     }
@@ -110,9 +110,15 @@ function templateDir(): string {
 }
 
 /**
- * The framework version a generated application pins to is this generator's own
- * version: `create-dinah` and the packages it generates against are released
+ * The framework version a generated application declares is this generator's own
+ * version: `create-mogget` and the packages it generates against are released
  * together, so they cannot disagree.
+ *
+ * Caret, not exact. Below 1.0 a caret range admits patches and nothing else, so a
+ * generated application collects `0.1.1` without ever crossing a minor — where the
+ * breaking changes live while the surface is still moving. An exact pin would
+ * strand every application generated today on the version that shipped today.
+ * `--from-tarballs` overwrites these specifiers wholesale, so it is unaffected.
  */
 function versions(): Versions {
   const manifest = JSON.parse(
@@ -120,7 +126,7 @@ function versions(): Versions {
   ) as { version: string }
 
   return {
-    dinah: manifest.version,
+    mogget: `^${manifest.version}`,
     react: REACT_VERSION,
     reactTypes: REACT_TYPES_VERSION,
     pnpm: PNPM_VERSION,
@@ -130,13 +136,13 @@ function versions(): Versions {
 function init(targetDir: string): void {
   const result = spawnSync('git', ['init', '--quiet'], { cwd: targetDir, stdio: 'inherit' })
   // A missing git is not a reason to fail a generated application.
-  if (result.error) console.warn('create-dinah: skipped `git init` — git is not available.')
+  if (result.error) console.warn('create-mogget: skipped `git init` — git is not available.')
 }
 
 /**
  * Install with pnpm — always, and never with whatever invoked `create`.
  *
- * A dinah application is pnpm-shaped by construction, in two ways that have no
+ * A mogget application is pnpm-shaped by construction, in two ways that have no
  * equivalent anywhere else:
  *
  * - `pnpm-workspace.yaml` carries `nodeLinker: hoisted`, which exists because
@@ -145,10 +151,10 @@ function init(targetDir: string): void {
  *   on launch. npm and yarn have no such setting to honour.
  * - Generated with `--from-tarballs`, the `overrides:` block that resolves the
  *   framework's own cross-references lives in that same file. Nothing else
- *   reads it, so every `@dinah/*` request goes to a registry that has no such
+ *   reads it, so every `@mogget/*` request goes to a registry that has no such
  *   version.
  *
- * Detecting the caller's package manager was therefore offering a choice dinah
+ * Detecting the caller's package manager was therefore offering a choice mogget
  * cannot honour: npm "succeeds" while silently ignoring the linker, and the
  * failure surfaces much later, at packaging, on Windows. Being explicit costs a
  * developer one `npm i -g pnpm`; the alternative costs them a debugging session
@@ -157,7 +163,7 @@ function init(targetDir: string): void {
 function install(targetDir: string): void {
   if (!hasPnpm()) {
     throw new ScaffoldError(
-      'create-dinah: dinah applications require pnpm.\n' +
+      'create-mogget: mogget applications require pnpm.\n' +
         '  `nodeLinker: hoisted` has no npm or yarn equivalent, and electron-builder\n' +
         '  needs it to package correctly on Windows.\n\n' +
         '    install it:  npm i -g pnpm\n' +
@@ -178,7 +184,7 @@ function install(targetDir: string): void {
   })
   if (result.status !== 0) {
     throw new ScaffoldError(
-      `create-dinah: \`pnpm install\` failed. The application is generated — run it again in ${basename(targetDir)}.`,
+      `create-mogget: \`pnpm install\` failed. The application is generated — run it again in ${basename(targetDir)}.`,
     )
   }
 }

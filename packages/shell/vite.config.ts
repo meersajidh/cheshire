@@ -6,6 +6,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
+    // Vite already defaults to false; stated so a future edit has to argue with
+    // it. A published map would carry the shell's source (premise 4).
+    sourcemap: false,
+
     // `dist/lib`, not `dist`: Vite empties its outDir, `tsc -b` writes the
     // declarations, and a build that wipes the other tool's output produces a
     // package that installs without types — while `tsc -b`, seeing an

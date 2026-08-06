@@ -4,7 +4,7 @@ import { build as electronBuild } from 'electron-builder'
 import type { Configuration } from 'electron-builder'
 import { build } from './build.js'
 import type { AppContext } from './app.js'
-import { DinahCliError } from './errors.js'
+import { MoggetCliError } from './errors.js'
 
 const require = createRequire(import.meta.url)
 
@@ -17,10 +17,10 @@ export interface PackageOptions {
 }
 
 /**
- * `dinah package` — build, then hand the built output to electron-builder.
+ * `mogget package` — build, then hand the built output to electron-builder.
  *
  * The whole configuration is derived, never authored: an application states
- * `appId` and `productName` in `dinah.config.ts` and the framework decides what
+ * `appId` and `productName` in `mogget.config.ts` and the framework decides what
  * those mean for a package (premise 3).
  */
 export async function packageApp(options: PackageOptions = {}, root?: string): Promise<void> {
@@ -33,12 +33,12 @@ export async function packageApp(options: PackageOptions = {}, root?: string): P
       ...(options.dir ? { dir: true } : {}),
     })
   } catch (error) {
-    throw new DinahCliError(
-      `dinah: packaging failed.\n${error instanceof Error ? error.message : String(error)}`,
+    throw new MoggetCliError(
+      `mogget: packaging failed.\n${error instanceof Error ? error.message : String(error)}`,
     )
   }
 
-  console.log(`\n  dinah  packaged ${app.config.productName} → dist/\n`)
+  console.log(`\n  mogget  packaged ${app.config.productName} → dist/\n`)
 }
 
 function builderConfig(app: AppContext, mainEntry: string): Configuration {
@@ -59,10 +59,10 @@ function builderConfig(app: AppContext, mainEntry: string): Configuration {
     //
     // The exclusion is not redundant. electron-builder collects production
     // dependencies through its own pass, *outside* these patterns, and only an
-    // explicit negation stops it — otherwise an application that names `dinah`
+    // explicit negation stops it — otherwise an application that names `mogget`
     // as a runtime dependency ships Vite, TypeScript and electron-builder
     // inside its asar. Nothing here needs to resolve at run time.
-    files: [relative(app.root, mainEntry), '.dinah/dist/renderer/**', '!node_modules/**'],
+    files: [relative(app.root, mainEntry), '.mogget/dist/renderer/**', '!node_modules/**'],
     extraMetadata: {
       main: relative(app.root, mainEntry),
       // Linux desktop environments associate a running window with its launcher

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DinahAppError, defineApp, resolveApp } from './views.js'
+import { MoggetAppError, defineApp, resolveApp } from './views.js'
 
 function Welcome() {
   return null
@@ -18,7 +18,7 @@ describe('resolveApp', () => {
   })
 
   it('rejects a non-object default export', () => {
-    expect(() => resolveApp(undefined)).toThrow(DinahAppError)
+    expect(() => resolveApp(undefined)).toThrow(MoggetAppError)
     expect(() => resolveApp(undefined)).toThrow(/default-export an app definition/)
   })
 

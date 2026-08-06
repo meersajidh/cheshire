@@ -1,13 +1,13 @@
-import { defineApp } from 'dinah'
+import { defineApp } from 'mogget'
 import { Welcome } from './views/Welcome'
 
 /**
  * Your application starts here.
  *
- * Everything under `src/` is yours. dinah supplies the window, the shell, the
+ * Everything under `src/` is yours. mogget supplies the window, the shell, the
  * build and the packaging — you supply the domain. There is no process entry to
  * write, no Electron or Vite config to keep, and no runtime API to call. The two
- * files the framework reads from you are `dinah.config.ts`, which says what this
+ * files the framework reads from you are `mogget.config.ts`, which says what this
  * application *is*, and this one, which says what it *contributes*.
  */
 export default defineApp({

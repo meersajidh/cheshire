@@ -2,14 +2,14 @@
 import { readFileSync } from 'node:fs'
 import { build } from './build.js'
 import { dev } from './dev.js'
-import { DinahCliError } from './errors.js'
+import { MoggetCliError } from './errors.js'
 import { packageApp } from './pack.js'
 
 const USAGE = `
-  dinah — build desktop applications
+  mogget — build desktop applications
 
   Usage
-    dinah <command>
+    mogget <command>
 
   Commands
     dev        Start the application in development
@@ -19,7 +19,7 @@ const USAGE = `
   Options
     --dir            package only: an unpacked directory, no installer
     -h, --help       Show this message
-    -v, --version    Show the dinah version
+    -v, --version    Show the mogget version
 `
 
 async function main(argv: string[]): Promise<void> {
@@ -44,7 +44,7 @@ async function main(argv: string[]): Promise<void> {
       console.log(version())
       return
     default:
-      throw new DinahCliError(`dinah: unknown command \`${command}\`.\n${USAGE}`)
+      throw new MoggetCliError(`mogget: unknown command \`${command}\`.\n${USAGE}`)
   }
 }
 
@@ -60,7 +60,7 @@ try {
 } catch (error) {
   // An application author gets the message; a stack through framework
   // internals would tell them nothing they can act on.
-  if (error instanceof DinahCliError) {
+  if (error instanceof MoggetCliError) {
     console.error(`\n${error.message}\n`)
     process.exitCode = 1
   } else {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DinahConfigError, defineConfig, resolveConfig } from './config.js'
+import { MoggetConfigError, defineConfig, resolveConfig } from './config.js'
 
 const minimal = defineConfig({ appId: 'com.example.demo', productName: 'Demo' })
 
@@ -14,7 +14,7 @@ describe('resolveConfig', () => {
   })
 
   it('names the missing field and the fix', () => {
-    expect(() => resolveConfig({ ...minimal, appId: '' })).toThrow(DinahConfigError)
+    expect(() => resolveConfig({ ...minimal, appId: '' })).toThrow(MoggetConfigError)
     expect(() => resolveConfig({ ...minimal, appId: '' })).toThrow(/missing `appId`/)
   })
 
