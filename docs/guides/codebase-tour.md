@@ -8,8 +8,8 @@
 > assumes [framework-architecture](framework-architecture.md) has been read — that document
 > explains _why_ the shape is this shape; this one shows you the shape.
 >
-> **Status.** Accurate at the close of **stage 1**; pointers refreshed 2026-08-05. The codebase is
-> small on purpose: about 1,550 lines of framework source across five packages. You can read all
+> **Status.** Accurate at the close of **stage 1**; pointers refreshed 2026-08-07. The codebase is
+> small on purpose: about 1,650 lines of framework source across five packages. You can read all
 > of it in an afternoon, and this tour is a suggestion for the order.
 >
 > **A warning about scale.** cheshire's design documents describe *systems* — a design system, a
@@ -30,7 +30,7 @@ Two commands before you start:
 
 ```bash
 pnpm install
-pnpm check        # lint + 5 builds + 5 typechecks + 22 tests — the whole gate
+pnpm check        # lint + 5 builds + 5 typechecks + 28 tests — the whole gate
 ```
 
 `pnpm check` is the gate. If it is green, the framework compiles and its unit tests pass. It does
@@ -453,9 +453,12 @@ npm 404s in tarball mode, and "succeeds" in registry mode while silently ignorin
 After that, the loop while you work on the framework is one command plus one install:
 
 ```bash
-pnpm pack:local --refresh ~/Repos/msh/play-cheshire/demo   # build → pack → repoint
-(cd ~/Repos/msh/play-cheshire/demo && pnpm install)
+pnpm pack:local --refresh <consumer>   # build → pack → repoint
+(cd <consumer> && pnpm install)
 ```
+
+`<consumer>` is any generated application outside this repository — the playground lives at
+`~/Repos/msh/play-cheshire/`, but nothing about the loop depends on that path.
 
 `scripts/pack-local.mjs` stamps a **unique version per pack** (`0.0.0-dev.<timestamp>`), which is
 the whole reason that install is enough. While every package sat at `0.0.0`, a repack was

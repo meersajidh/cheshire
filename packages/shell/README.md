@@ -12,8 +12,10 @@ pnpm create cheshire my-app
 
 ## Status
 
-**Pre-1.0 and changing.** Today the shell renders the body and lists an application's contributed
-views. The title bar and status bar are named in the anatomy and not yet built.
+**Pre-1.0 and changing.** Today the shell renders the body — an activity bar, a sidebar listing the
+application's contributed views, and an editor area rendering the active one — under a status bar.
+The status bar's own contents are fixed for now; nothing contributes into it yet. The title bar is
+named in the anatomy and not yet built (stage 2a).
 
 React and React DOM are peer dependencies — an application owns exactly one copy of each.
 

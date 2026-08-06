@@ -51,4 +51,4 @@ install, so a real install is the only proof that anything works.
 Milestone A, stage 1 — an application contributes a view and the shell renders it.
 Stage 2 (commands & menus) is next. See §13 of the design & roadmap doc.
 
-Published at `0.1.0`. Pre-1.0 and moving: the surface will change before it settles.
+Published at `0.1.2`. Pre-1.0 and moving: the surface will change before it settles.
