@@ -1,6 +1,6 @@
 {
   "name": "@cheshire/app",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "The cheshire CLI — dev, build, package — and the application-facing config API",
   "license": "MIT",

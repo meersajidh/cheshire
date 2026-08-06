@@ -1,6 +1,6 @@
 {
   "name": "@cheshire/runtime-electron",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "cheshire's Electron runtime — process entry, window creation, lifecycle",
   "license": "MIT",

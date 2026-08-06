@@ -3,3 +3,12 @@
 # follow when collecting binaries: the packaged app ships incomplete and crashes
 # on launch. Keep this setting.
 nodeLinker: hoisted
+
+# pnpm 10+ refuses to run a dependency's install scripts unless it is named here.
+# Electron's postinstall is what downloads the platform binary; without this the
+# install still succeeds, `node_modules/electron/` still exists, and it holds
+# `install.js` but no `dist/` and no `path.txt` — so `pnpm dev` has nothing to
+# launch and dies with no useful message. Paid for once, on the first application
+# generated from the published packages.
+allowBuilds:
+  electron: true

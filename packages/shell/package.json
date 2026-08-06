@@ -1,6 +1,6 @@
 {
   "name": "@cheshire/shell",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "The cheshire shell \u2014 title bar, body, status bar; the root of the renderer",
   "license": "MIT",
