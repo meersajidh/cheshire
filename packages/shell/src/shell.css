@@ -25,7 +25,10 @@
   }
 }
 
-.dinah-workbench {
+/* The shell's root. Two of the three vertical zones exist today — the body and
+   the status bar; the title bar arrives with stage 2a, and the body's regions
+   are what the layout service will make optional per template. */
+.dinah-shell {
   display: grid;
   grid-template-columns: 48px 260px 1fr;
   grid-template-rows: 1fr 24px;

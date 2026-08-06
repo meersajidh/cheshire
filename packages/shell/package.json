@@ -1,15 +1,15 @@
 {
-  "name": "@dinah/workbench",
+  "name": "@dinah/shell",
   "version": "0.0.0",
   "type": "module",
-  "description": "The dinah application shell — activity bar, sidebar, editor area, status bar",
+  "description": "The dinah shell \u2014 title bar, body, status bar; the root of the renderer",
   "license": "MIT",
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
-      "default": "./dist/lib/workbench.js"
+      "default": "./dist/lib/shell.js"
     },
-    "./style.css": "./dist/lib/workbench.css",
+    "./style.css": "./dist/lib/shell.css",
     "./package.json": "./package.json"
   },
   "files": [

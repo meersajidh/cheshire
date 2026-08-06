@@ -10,7 +10,7 @@ import type { AppContext } from './app.js'
  * modules. The application still authors only `dinah.config.ts` and `src/`;
  * everything here is generated, git-ignored, and overwritten without warning.
  *
- * Writing real files buys one thing that decides the design: `@dinah/workbench`
+ * Writing real files buys one thing that decides the design: `@dinah/shell`
  * and `react` resolve by name from the application's own `node_modules`,
  * because the importer physically lives there. Nothing has to be aliased into
  * existence, and no framework source enters the application's module graph.
@@ -90,12 +90,12 @@ function indexHtml(app: AppContext): string {
  */
 function rendererEntry(hasEntry: boolean): string {
   return `${JS_BANNER}
-import { mountWorkbench } from '@dinah/workbench'
-import '@dinah/workbench/style.css'
+import { mountShell } from '@dinah/shell'
+import '@dinah/shell/style.css'
 import { config } from './config'
 ${hasEntry ? `import app from '../src/index'` : 'const app = {} // no src/index.ts — nothing contributed'}
 
-mountWorkbench({ config, app })`
+mountShell({ config, app })`
 }
 
 /** `src/index.ts` or `src/index.tsx` — either resolves for TypeScript and Vite. */

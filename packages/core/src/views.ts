@@ -1,6 +1,6 @@
 /**
  * The contribution contract: what an application declares from `src/index.ts`,
- * and what the workbench renders.
+ * and what the shell renders.
  *
  * This module is a **separate entry** (`@dinah/core/views`) for one reason: it
  * names React's `ComponentType`, and `@dinah/runtime-electron` imports the core
@@ -13,7 +13,7 @@
  */
 import type { ComponentType } from 'react'
 
-/** A view an application contributes to the workbench. */
+/** A view an application contributes to the shell. */
 export interface ViewContribution {
   /** Stable identity, unique within the application. Used to address the view. */
   id: string
@@ -28,7 +28,7 @@ export interface AppDefinition {
   views?: ViewContribution[]
 }
 
-/** An app definition with every default filled in. What the workbench consumes. */
+/** An app definition with every default filled in. What the shell consumes. */
 export interface ResolvedApp {
   views: ViewContribution[]
 }

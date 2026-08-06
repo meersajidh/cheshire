@@ -40,7 +40,7 @@ describe('generate', () => {
   it('resolves the framework by name, so nothing needs aliasing', () => {
     const app = fixture()
     generate(app)
-    expect(read(app, 'renderer.tsx')).toContain("from '@dinah/workbench'")
+    expect(read(app, 'renderer.tsx')).toContain("from '@dinah/shell'")
     expect(read(app, 'main.mjs')).toContain("from '@dinah/runtime-electron/main'")
   })
 
@@ -48,10 +48,10 @@ describe('generate', () => {
     const app = withEntry(fixture())
     generate(app)
     expect(read(app, 'renderer.tsx')).toContain("import app from '../src/index'")
-    expect(read(app, 'renderer.tsx')).toContain('mountWorkbench({ config, app })')
+    expect(read(app, 'renderer.tsx')).toContain('mountShell({ config, app })')
   })
 
-  it('still renders a workbench when the application has no entry', () => {
+  it('still renders a shell when the application has no entry', () => {
     const app = fixture()
     generate(app)
     // A missing `src/index.ts` is the developer's mistake; a module-resolution

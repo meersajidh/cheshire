@@ -32,7 +32,7 @@ const TARBALL_DIR = join(ROOT, '.local', 'tarballs')
 /** Packed in this order; it is also dependency order, which keeps output readable. */
 const PACKAGES = [
   'packages/core',
-  'packages/workbench',
+  'packages/shell',
   'packages/runtime/electron',
   'cli/dinah',
   'cli/create-dinah',
@@ -169,13 +169,34 @@ function refresh(targetDir) {
 
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
   let rewritten = 0
+  const dropped = []
   for (const group of ['dependencies', 'devDependencies']) {
     for (const name of Object.keys(manifest[group] ?? {})) {
       const tarball = tarballs.get(name)
-      if (!tarball) continue
-      manifest[group][name] = `file:${tarball}`
-      rewritten += 1
+      if (tarball) {
+        manifest[group][name] = `file:${tarball}`
+        rewritten += 1
+        continue
+      }
+
+      // A dinah-scoped dependency with no tarball is a package that has been
+      // renamed or removed since this consumer was generated. Rewriting only
+      // what matches would leave the dead specifier resolving to whatever stale
+      // tarball is still on disk — a consumer that installs green and runs the
+      // wrong code. Drop it and say so; the replacement arrives when the
+      // consumer is regenerated from the current template.
+      if (name === 'dinah' || name === 'create-dinah' || name.startsWith('@dinah/')) {
+        delete manifest[group][name]
+        dropped.push(name)
+      }
     }
+  }
+
+  if (dropped.length > 0) {
+    console.warn(
+      `  warn  ${targetDir}: dropped ${dropped.join(', ')} — no such package is packed any more.\n` +
+        '        Regenerate this consumer with create-dinah; --refresh cannot add what a rename removed.',
+    )
   }
 
   if (rewritten === 0) {

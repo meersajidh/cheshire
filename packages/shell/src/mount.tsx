@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { ResolvedDinahConfig } from '@dinah/core'
 import { resolveApp } from '@dinah/core/views'
-import { Workbench } from './Workbench.js'
+import { Shell } from './Shell.js'
 
 export interface MountOptions {
   config: ResolvedDinahConfig
@@ -23,7 +23,7 @@ export interface MountOptions {
  * an application never calls this, and never authors the entry that does
  * (premise 3).
  */
-export function mountWorkbench({ config, app, container }: MountOptions): void {
+export function mountShell({ config, app, container }: MountOptions): void {
   const host = container ?? document.getElementById('root')
   if (!host) {
     throw new Error('dinah: no mount container — expected an element with id "root".')
@@ -35,7 +35,7 @@ export function mountWorkbench({ config, app, container }: MountOptions): void {
 
   createRoot(host).render(
     <StrictMode>
-      <Workbench productName={config.productName} views={views} />
+      <Shell productName={config.productName} views={views} />
     </StrictMode>,
   )
 }

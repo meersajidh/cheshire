@@ -11,13 +11,16 @@
 > **What it is not.** Not a decision record — [the premises](../premises.md) hold those, and
 > where this document explains a decision it points at them rather than restating them. Not a
 > roadmap either; [design & roadmap](../design-and-roadmap.md) owns the structure, the package
-> list and the stage plan, and this document assumes it.
+> list and the stage plan, and this document assumes it. Not the surface either: what an
+> application eventually contributes, and which system it contributes to, is
+> [the application surface](../application-surface.md).
 >
 > **Reading order.** [premises](../premises.md) → [design & roadmap](../design-and-roadmap.md)
-> → this → [the tour](codebase-tour.md).
+> → [the application surface](../application-surface.md) → this → [the tour](codebase-tour.md).
 >
-> **Status.** Written at the close of stage 0, refreshed at the close of stage 1. Everything
-> described here exists and runs; where a thing is deliberately not built yet, it says so.
+> **Status.** Written at the close of stage 0, refreshed at the close of stage 1, and again on
+> 2026-08-05 for the systems vocabulary. Everything described here exists and runs; where a thing
+> is deliberately not built yet, it says so.
 
 ---
 
@@ -70,9 +73,15 @@ belong to dinah.
 | Configuration | `dinah.config.ts` | every tsconfig, the Vite configs, the packaging config |
 | Contributions | `src/index.ts` — what the app declares | the contract it declares against, and the shell that renders it |
 | Entry points | _none — they are generated for it_ | the HTML entry, the renderer entry, the Electron main entry |
-| UI | its own views and components | the workbench shell that hosts them |
+| UI | its own views and components | the shell that hosts them |
 | Generated | _nothing — it is written for them_ | `.dinah/` |
 | Build output | its own renderer bundle | its own packages, shipped built |
+
+That line generalises past files. dinah's capabilities arrive as **systems**, each reached through named
+services — design, command, shell, customization, storage, identity, devtools — and the
+application's job at every one is to *declare into* it, never to implement it. The table above is the stage-1 slice of
+that: today only views cross the line, and by stage 2 commands and menus do. The whole list, and
+which system each contribution belongs to, is [the application surface](../application-surface.md).
 
 Two properties are worth naming, because they are the ones that decay quietly if nobody watches.
 
@@ -96,7 +105,7 @@ flowchart TD
   end
   subgraph FW["dinah — installed into node_modules"]
     CORE["@dinah/core<br/>the config contract"]
-    WB["@dinah/workbench<br/>the shell, built"]
+    WB["@dinah/shell<br/>the shell, built"]
     RT["@dinah/runtime-electron<br/>window, lifecycle"]
     CLI["dinah<br/>dev · build · package"]
   end
@@ -150,7 +159,7 @@ config file or parses TypeScript.
 file has to import both and start something. Whoever owns that file owns the boot sequence.
 
 **dinah's answer: generated files in the application's directory.** On every run, `dinah` writes
-`.dinah/` into the app: the HTML entry, the renderer entry that mounts the workbench, the config
+`.dinah/` into the app: the HTML entry, the renderer entry that mounts the shell, the config
 as a module, the Electron entries, a tsconfig and an ambient CSS declaration. Every file is
 banner-marked as generated, and edits are lost on the next run.
 
@@ -158,7 +167,7 @@ The alternative — keeping the entry inside the framework package and reaching 
 virtual module specifiers — was rejected. It forces the framework to ship its source, and the app
 ends up holding both source and built output with nothing deciding which its imports resolve to.
 Writing a few files into the app is the cheaper half of that trade, and it buys one thing
-outright: because the importer physically lives in the app's directory, `@dinah/workbench` and
+outright: because the importer physically lives in the app's directory, `@dinah/shell` and
 `react` resolve by name from the app's own `node_modules`. Nothing has to be aliased into
 existence.
 
@@ -180,7 +189,7 @@ register them.
 **dinah's answer: one default export, imported by the generated renderer.** `src/index.ts`
 default-exports `defineApp({ views })`, and the renderer the framework writes imports it by
 relative path. There is no registry to call, no lifecycle hook to implement, and no scanning of
-the filesystem for files that look like views — the app hands over a value, and the workbench
+the filesystem for files that look like views — the app hands over a value, and the shell
 renders it.
 
 ```ts
@@ -196,7 +205,7 @@ export default defineApp({
 Three properties of that shape are the point of it:
 
 - **Declarative, not imperative.** The app says what exists; it never says what is on screen.
-  Which view is active is the workbench's state, so layout persistence (stage 3) has somewhere to
+  Which view is active is the shell's state, so layout persistence (stage 3) has somewhere to
   live that the app cannot contradict.
 - **`defineApp` is identity at run time.** Like `defineConfig`, it exists so the developer gets
   completion and a type error at the line they wrote, rather than a stack from a generated file.
@@ -249,7 +258,7 @@ sequenceDiagram
   Note over CLI,E: config + dev URL travel in DINAH_RUNTIME_OPTIONS
   E->>E: start(options) → BrowserWindow
   E->>V: loadURL(dev server)
-  V-->>E: the workbench, hot-reloading
+  V-->>E: the shell, hot-reloading
 ```
 
 `build` and `package` share the first three steps and diverge after:
@@ -324,7 +333,18 @@ tarball**, from the very first run. This is not caution; it is the rule that cau
 directory another had written to.
 
 **No plugin system.** Views, commands and menus contributed by an application are the platform's
-ordinary surface, not a plugin mechanism. First-party surface only.
+ordinary surface, not a plugin mechanism. First-party surface only. What that removes is an entire
+category of machinery — manifests parsed at runtime, per-extension sandboxes, trust classes,
+version negotiation between host and extension, lazy activation events — and what it buys is that
+**a contribution is a value the compiler can see**. A typo'd command id in a menu becomes a build
+error naming the application's own file, not a warning in a log at runtime.
+
+**Systems, not a pile of APIs.** Everything dinah ships is grouped as a system an application
+declares into, and every system is reached through named **services** — one typed hook each.
+The test of whether something belongs in a system is whether an application would otherwise
+write it: a shortcut matcher, a menu bar, a theme switcher, a docking implementation. None of
+those are application code, in any phase. The canonical list is
+[design & roadmap](../design-and-roadmap.md) §2.
 
 **Build with vision.** Scope and direction come from the product owner. There is no
 evidence-gating and no "wait for a second consumer" argument here; the one thing that gets
@@ -341,24 +361,36 @@ Consolidation, documentation and refactoring queue _behind_ the next runnable mi
 | Term | Meaning |
 | --- | --- |
 | **application** / **app** | What a developer builds with dinah. dinah's customer. |
-| **the framework** | This repository: packages, template, CLIs. |
+| **the framework** | This repository: packages, templates, CLIs. |
+| **system** | A capability dinah ships whole, that an application declares into and never implements — design, command, workbench, settings, storage, diagnostics. |
+| **the design system** | Components, icons, and the design-token contract. `@dinah/ui`. Not built. |
+| **the shell** | The root of the renderer: title bar, **body**, status bar, and an overlay plane. `@dinah/shell`. |
+| **the body** | The shell's middle zone, holding the regions. Named so it cannot be confused with *activity bar*. |
+| **the command system** | Commands, shortcuts, menus, context menus, the palette. A menu item is a *command reference* — it never holds a handler. Not built. |
 | **the config contract** | `dinah.config.ts` — what the application *is*. |
 | **the contribution contract** | `src/index.ts` — what the application *contributes*. |
-| **view** | An id, a title, and a React component. What the workbench renders. |
+| **template** | An opinionated blueprint: a configuration of dinah's systems, materialised by `create-dinah`. `workbench` is the only one built. |
+| **view** | An id, a title, and a React component. What the shell renders. |
 | **derivatives** | The generated contents of `.dinah/`. Rewritten every run, never edited. |
 | **the seam** | The published surface: what an app can import and nothing more. |
 | **main process** | Electron's Node process. Owns windows and the desktop. Framework-only. |
 | **renderer** | The browser page. Where app UI runs. |
 | **asar** | Electron's archive format for an app's files inside a package. |
 | **the proof gate** | pack tarballs → generate an app → build → run it, on real artifacts. |
-| **workbench** | The VS Code-like shell: activity bar, sidebar, editor area, status bar. |
+| **workbench** | The name of a *template* — the VS Code-like blueprint. Not the package that draws it; that is `@dinah/shell`. |
 
 ---
 
 ## 8. What this document does not cover
 
-- **The roadmap and package factoring** — [design & roadmap](../design-and-roadmap.md).
+- **The roadmap, package factoring, and what a template is** —
+  [design & roadmap](../design-and-roadmap.md).
 - **What is true at all times** — [premises](../premises.md).
 - **What the code actually says** — [the codebase tour](codebase-tour.md).
-- **Commands, menus, layout persistence** — stages 2 and 3. Not built; not designed here in
-  advance.
+- **The full contribution surface and the systems behind it** — every contribution kind, the host
+  process, and which zone each service sits in —
+  [the application surface](../application-surface.md). That document settles the *layering*; it
+  deliberately does not settle the API shape of anything unbuilt, which is the building stage's
+  call.
+- **Commands, menus and layout persistence as code** — stages 2 and 3. Designed in the surface
+  document, not built here yet.

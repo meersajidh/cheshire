@@ -16,6 +16,8 @@ export interface Versions {
   dinah: string
   react: string
   reactTypes: string
+  /** Pinned into the generated `packageManager` field, so corepack agrees with us. */
+  pnpm: string
 }
 
 /** Files whose placeholders are substituted. Anything else is copied verbatim. */
@@ -57,6 +59,7 @@ export function scaffold(
     dinahVersion: versions.dinah,
     reactVersion: versions.react,
     reactTypesVersion: versions.reactTypes,
+    pnpmVersion: versions.pnpm,
   })
 }
 

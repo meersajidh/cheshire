@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@{{pnpmVersion}}",
   "scripts": {
     "dev": "dinah dev",
     "build": "dinah build",
     "package": "dinah package"
   },
   "devDependencies": {
-    "@dinah/workbench": "{{dinahVersion}}",
+    "@dinah/shell": "{{dinahVersion}}",
     "@types/react": "{{reactTypesVersion}}",
     "dinah": "{{dinahVersion}}",
     "react": "{{reactVersion}}",

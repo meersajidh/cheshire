@@ -3,7 +3,7 @@
 A platform for building desktop applications.
 
 ```bash
-pnpm create dinah my-app
+pnpm create dinah my-app     # requires pnpm — see docs/design-and-roadmap.md §5
 cd my-app
 pnpm dev
 ```
@@ -18,8 +18,9 @@ its customer and lives in its own repository, depending on released `@dinah/*` p
 never on framework source.
 
 ```
-packages/    @dinah/* — core, react, workbench, layout, commands, settings, runtime
-templates/   the starter application (workbench)
+packages/    @dinah/* — core, react, ui, shell, layout, commands, customization,
+             storage, identity, devtools, runtime, host
+templates/   opinionated blueprints — a configuration of dinah's systems (workbench)
 cli/         create-dinah (project generation) + dinah (dev, build, package)
 docs/        premises and architecture
 ```
@@ -29,6 +30,9 @@ docs/        premises and architecture
 - [docs/premises.md](docs/premises.md) — the 8 founding premises. Upstream of every decision.
 - [docs/design-and-roadmap.md](docs/design-and-roadmap.md) — structure, packages, CLIs,
   development flow, roadmap.
+- [docs/application-surface.md](docs/application-surface.md) — how an application layers on
+  dinah: the Workbench and Host surfaces, every contribution kind, the platform services.
+- [docs/guides/](docs/guides/) — onboarding: framework architecture, codebase tour.
 
 ## Development
 

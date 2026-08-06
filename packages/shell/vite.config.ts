@@ -14,8 +14,8 @@ export default defineConfig({
     lib: {
       entry: 'src/index.ts',
       formats: ['es'],
-      fileName: 'workbench',
-      cssFileName: 'workbench',
+      fileName: 'shell',
+      cssFileName: 'shell',
     },
     rollupOptions: {
       external: ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client'],

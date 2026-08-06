@@ -8,9 +8,14 @@
 > assumes [framework-architecture](framework-architecture.md) has been read — that document
 > explains _why_ the shape is this shape; this one shows you the shape.
 >
-> **Status.** Accurate at the close of **stage 1**. The codebase is small on purpose: about
-> 1,550 lines of framework source across five packages. You can read all of it in an afternoon,
-> and this tour is a suggestion for the order.
+> **Status.** Accurate at the close of **stage 1**; pointers refreshed 2026-08-05. The codebase is
+> small on purpose: about 1,550 lines of framework source across five packages. You can read all
+> of it in an afternoon, and this tour is a suggestion for the order.
+>
+> **A warning about scale.** dinah's design documents describe *systems* — a design system, a
+> command system, storage, settings — and almost none of that is code yet. This tour is the honest
+> counterweight: it walks what exists. When the two disagree, the code is right and
+> [the application surface](../application-surface.md) is intent.
 
 ---
 
@@ -40,14 +45,20 @@ section on it at the end.
 dinah/
 ├── packages/
 │   ├── core/                  @dinah/core              the config + contribution contracts
-│   ├── workbench/             @dinah/workbench         the React shell
+│   ├── shell/                 @dinah/shell             the React shell
 │   └── runtime/electron/      @dinah/runtime-electron  window + lifecycle
 ├── cli/
 │   ├── dinah/                 dinah                    dev · build · package
 │   └── create-dinah/          create-dinah             generate an application
-├── templates/workbench/       the starter app (not a workspace package)
+├── templates/workbench/       a blueprint (not a workspace package)
 └── docs/
 ```
+
+A **template** is an opinionated blueprint — a configuration of dinah's systems that
+`create-dinah` materialises into an application (design & roadmap §5). `workbench` is the only one
+that exists; `chat` and `community` are named shapes and nothing more. Today a template configures
+very little, because there is very little to configure — that grows with the systems, not ahead of
+them.
 
 Split by who runs the code, which is the split that matters when you are looking for something:
 
@@ -55,7 +66,7 @@ Split by who runs the code, which is the split that matters when you are looking
 | --- | --- |
 | The developer's terminal | `dinah`, `create-dinah` |
 | Electron's main process | `@dinah/runtime-electron` |
-| The browser page | `@dinah/workbench` |
+| The browser page | `@dinah/shell` |
 | All three | `@dinah/core` — types plus four pure functions, on two entries |
 
 `@dinah/core` has a second entry, `@dinah/core/views`, and the split is not cosmetic. It holds the
@@ -133,7 +144,7 @@ naming.
 | File | What it is |
 | --- | --- |
 | `index.html` | Vite's root document. Has `#root` and loads the renderer entry |
-| `renderer.tsx` | Imports `mountWorkbench`, the stylesheet, the config **and the app's `src/index`**; mounts |
+| `renderer.tsx` | Imports `mountShell`, the stylesheet, the config **and the app's `src/index`**; mounts |
 | `config.ts` | The resolved config, as a TypeScript module |
 | `main.mjs` | Electron's entry in development |
 | `prod/main.mjs` | Electron's entry when packaged — the one that gets bundled |
@@ -151,12 +162,12 @@ comments above each explain the one non-obvious thing about it.
 ```js
 import app from '../src/index'
 
-mountWorkbench({ config, app })
+mountShell({ config, app })
 ```
 
 That import is the **only** place the framework reads application code, and it is a plain relative
 path because `.dinah/` lives inside the application. `hasAppEntry:102` decides whether to emit it:
-an app with no `src/index.ts` still gets a running workbench and an empty state, rather than a
+an app with no `src/index.ts` still gets a running shell and an empty state, rather than a
 module-resolution failure from a file the developer did not write.
 
 The two Electron entries are the other interesting pair:
@@ -244,8 +255,8 @@ about Vite. It is handed a plain object and starts. That is what makes it packag
 
 ### 7. The renderer
 
-The generated `renderer.tsx` calls `mountWorkbench` from
-`packages/workbench/src/mount.tsx:26`, which validates the app's default export with `resolveApp`,
+The generated `renderer.tsx` calls `mountShell` from
+`packages/shell/src/mount.tsx:26`, which validates the app's default export with `resolveApp`,
 sets `document.title` from the config, and renders `<Workbench>` into `#root` inside
 `<StrictMode>`.
 
@@ -254,16 +265,16 @@ line the developer wrote; typing it here would only move a failure into a genera
 report it there. Anything that gets past `defineApp` is caught by `resolveApp`, whose messages
 name `src/index.ts`.
 
-`packages/workbench/src/Workbench.tsx:19` is the shell: an activity bar, a sidebar, an editor
+`packages/shell/src/Shell.tsx:24` is the shell: an activity bar, a sidebar, an editor
 area, a status bar — four CSS grid regions. The sidebar lists the contributed views and
-`ActiveView:68` renders the active one under the workbench's own title strip. `EmptyState:80`
+`ActiveView:73` renders the active one under the shell's own chrome. `EmptyState:85`
 survives for an app that contributes nothing.
 
-The active view is held in `useState` **in the workbench**, not passed in. An application declares
+The active view is held in `useState` **in the shell**, not passed in. An application declares
 what exists and never what is on screen — which is what leaves stage 3 (layout persistence)
 somewhere to live that an app cannot contradict.
 
-`workbench.css` is plain CSS with custom properties and a `prefers-color-scheme` block. No
+`shell.css` is plain CSS with custom properties and a `prefers-color-scheme` block. No
 Tailwind, no CSS-in-JS: the shell ships as a stylesheet a consumer imports.
 
 **You now have a window, with the application's view in it.** Total framework code executed: on
@@ -391,8 +402,13 @@ pnpm exec create-dinah demo --from-tarballs "$PWD/../tarballs"
 cd demo && pnpm dev && pnpm build && pnpm package --dir
 ```
 
-`pnpm exec` rather than `npx` matters: it makes the generator choose pnpm for the app's install,
-and npm never reads the `pnpm-workspace.yaml` overrides that tarball mode writes.
+**A generated application is pnpm-only, and `create-dinah` enforces it** — it runs `pnpm install`
+whatever invoked it, and refuses with a message naming the fix if pnpm is absent. Two things make
+that non-negotiable: `pnpm-workspace.yaml` carries `nodeLinker: hoisted`, which npm and yarn have
+no equivalent for and electron-builder needs on Windows; and in tarball mode the `overrides:` block
+that resolves every `@dinah/*` request lives in that same file, which nothing else reads. Detecting
+the caller's package manager used to be the behaviour, and it offered a choice dinah cannot honour:
+npm 404s in tarball mode, and "succeeds" in registry mode while silently ignoring the linker.
 
 After that, the loop while you work on the framework is one command plus one install:
 
@@ -425,12 +441,18 @@ What stage 2 and beyond will touch, and what is deliberately empty today:
 
 | Seam | Today | Next |
 | --- | --- | --- |
-| `AppDefinition` | `views` | Stage 2: `commands`, and menus built from them |
+| `AppDefinition` | `views` | Stage 2: `commands` and `menus` — the command system's contract |
 | `ViewContribution` | `id`, `title`, `component` | Icons, placement, per-view state |
 | Active view | `useState` in `Workbench` | Stage 3: persisted across restarts |
-| `WindowConfig` | `width`, `height` | Grows as the shell does |
-| `@dinah/runtime-electron` | One window, no IPC | Menus, dialogs, then phase-4 interfaces |
+| `DinahConfig` | `appId`, `productName`, `window` | A `services` block — how a template declares which systems are switched on |
+| `@dinah/runtime-electron` | One window, **no IPC and no preload** | Stage 2a: a preload membrane, window controls, a CSP |
+| Design system | Hand-written CSS in `@dinah/shell` | `@dinah/ui` — components, icons, a two-layer token contract |
+| Host process | Does not exist | The application's own backend, brokered by dinah (surface doc §4) |
 | Runtime abstraction | Electron named directly, inside the runtime package | Phase 4, validated by a Tauri port |
+
+Read that table against [the application surface](../application-surface.md) and the size of the
+gap is the point: the right-hand column is design, the left is code. Nothing in the right column
+is load-bearing until a stage builds it.
 
 And the gaps that are gaps rather than seams — worth fixing when they get in your way, not before:
 no application icon in a packaged build, and no watch on the main process during `dev`.
