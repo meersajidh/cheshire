@@ -4,7 +4,7 @@ packages:
   - 'cli/*'
 
 # templates/ is deliberately NOT a workspace package: template dependencies are
-# resolved by create-mogget inside the generated app, never installed here.
+# resolved by create-cheshire inside the generated app, never installed here.
 # (x-bb learned the harder version of this: examples/ on `workspace:*` resolved
 # to framework SOURCE, so the one thing meant to prove the seam proved an
 # arrangement no consumer could reproduce.)

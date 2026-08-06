@@ -1,19 +1,19 @@
-# @mogget/runtime-electron
+# @cheshire/runtime-electron
 
-[mogget](https://github.com/meersajidh/mogget)'s Electron runtime — process entry, window
+[cheshire](https://github.com/meersajidh/cheshire)'s Electron runtime — process entry, window
 creation, lifecycle.
 
 **You do not install this directly, and application code never imports it.** It arrives with
-`mogget`, and the framework owns the process entry. No application names an Electron module, a
+`@cheshire/app`, and the framework owns the process entry. No application names an Electron module, a
 window API, an IPC channel, or a protocol scheme.
 
 ```bash
-pnpm create mogget my-app
+pnpm create cheshire my-app
 ```
 
 ## Why it is a separate package
 
-Electron is mogget's first runtime, and an implementation detail. Keeping it behind a package
+Electron is cheshire's first runtime, and an implementation detail. Keeping it behind a package
 boundary is what lets a second runtime slot in beside it rather than through it.
 
 ## Status

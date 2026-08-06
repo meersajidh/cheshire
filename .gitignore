@@ -6,7 +6,7 @@ pnpm-debug.log*
 
 node_modules
 dist
-.mogget
+.cheshire
 *.tsbuildinfo
 *.local
 # Editor directories and files

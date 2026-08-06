@@ -5,14 +5,14 @@
   "type": "module",
   "packageManager": "pnpm@{{pnpmVersion}}",
   "scripts": {
-    "dev": "mogget dev",
-    "build": "mogget build",
-    "package": "mogget package"
+    "dev": "cheshire dev",
+    "build": "cheshire build",
+    "package": "cheshire package"
   },
   "devDependencies": {
-    "@mogget/shell": "{{moggetVersion}}",
+    "@cheshire/app": "{{cheshireVersion}}",
+    "@cheshire/shell": "{{cheshireVersion}}",
     "@types/react": "{{reactTypesVersion}}",
-    "mogget": "{{moggetVersion}}",
     "react": "{{reactVersion}}",
     "react-dom": "{{reactVersion}}"
   }

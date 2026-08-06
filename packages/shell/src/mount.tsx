@@ -1,11 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import type { ResolvedMoggetConfig } from '@mogget/core'
-import { resolveApp } from '@mogget/core/views'
+import type { ResolvedCheshireConfig } from '@cheshire/core'
+import { resolveApp } from '@cheshire/core/views'
 import { Shell } from './Shell.js'
 
 export interface MountOptions {
-  config: ResolvedMoggetConfig
+  config: ResolvedCheshireConfig
   /**
    * The default export of the application's `src/index.ts`, unvalidated.
    *
@@ -26,7 +26,7 @@ export interface MountOptions {
 export function mountShell({ config, app, container }: MountOptions): void {
   const host = container ?? document.getElementById('root')
   if (!host) {
-    throw new Error('mogget: no mount container — expected an element with id "root".')
+    throw new Error('cheshire: no mount container — expected an element with id "root".')
   }
 
   const { views } = resolveApp(app)

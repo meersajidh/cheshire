@@ -66,21 +66,12 @@ importers:
         specifier: 'catalog:'
         version: 4.1.10(@types/node@24.13.3)(vite@8.2.0(@types/node@24.13.3)(jiti@2.7.0))
 
-  cli/create-mogget:
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.13.3
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
-  cli/mogget:
+  cli/cheshire:
     dependencies:
-      '@mogget/core':
+      '@cheshire/core':
         specifier: workspace:^
         version: link:../../packages/core
-      '@mogget/runtime-electron':
+      '@cheshire/runtime-electron':
         specifier: workspace:^
         version: link:../../packages/runtime/electron
       '@vitejs/plugin-react':
@@ -106,6 +97,15 @@ importers:
         specifier: 'catalog:'
         version: 19.2.18
 
+  cli/create-cheshire:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
   packages/core:
     dependencies:
       react:
@@ -121,7 +121,7 @@ importers:
 
   packages/runtime/electron:
     dependencies:
-      '@mogget/core':
+      '@cheshire/core':
         specifier: workspace:^
         version: link:../../core
     devDependencies:
@@ -134,7 +134,7 @@ importers:
 
   packages/shell:
     dependencies:
-      '@mogget/core':
+      '@cheshire/core':
         specifier: workspace:^
         version: link:../core
     devDependencies:

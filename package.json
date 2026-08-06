@@ -1,9 +1,9 @@
 {
-  "name": "mogget-framework",
+  "name": "cheshire-framework",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "mogget — a platform for building desktop applications",
+  "description": "cheshire — a platform for building desktop applications",
   "packageManager": "pnpm@11.17.0",
   "engines": {
     "node": ">=22"
@@ -15,7 +15,7 @@
     "test": "vitest run",
     "check": "pnpm lint && pnpm build && pnpm typecheck && pnpm test",
     "pack:local": "node scripts/pack-local.mjs",
-    "clean": "pnpm -r exec rm -rf dist && rm -rf .mogget"
+    "clean": "pnpm -r exec rm -rf dist && rm -rf .cheshire"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

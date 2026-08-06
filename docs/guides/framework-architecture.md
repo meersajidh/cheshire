@@ -1,7 +1,7 @@
 # Framework architecture
 
-> **What this is.** The shape of mogget as a _framework_ — the handful of problems any framework
-> of this kind has to solve, the answer mogget picked for each, and why. It is the conceptual
+> **What this is.** The shape of cheshire as a _framework_ — the handful of problems any framework
+> of this kind has to solve, the answer cheshire picked for each, and why. It is the conceptual
 > layer under [the codebase tour](codebase-tour.md): the tour walks the code, this explains the
 > pattern the code is an instance of.
 >
@@ -38,12 +38,12 @@ flowchart LR
     A["your program<br/>owns the entry point"] -->|calls| B["lodash<br/>date-fns<br/>react-dom"]
   end
   subgraph FW["Using a framework"]
-    C["mogget<br/>owns the entry point"] -->|calls| D["your mogget.config.ts<br/>your src/"]
+    C["cheshire<br/>owns the entry point"] -->|calls| D["your cheshire.config.ts<br/>your src/"]
   end
 ```
 
 This is **inversion of control** — _don't call us, we'll call you_. React is a mild example: you
-write components, React decides when to render them. Next.js is a strong one, and mogget is the
+write components, React decides when to render them. Next.js is a strong one, and cheshire is the
 same strength. An application never writes the HTML entry, never writes the module that mounts
 the shell, never writes the Electron main process, and never configures the bundler.
 
@@ -66,18 +66,18 @@ window is created, how the app is packaged, which flags a development launch nee
 ## 2. The ownership line
 
 Everything below is downstream of one boundary: which files belong to the application, and which
-belong to mogget.
+belong to cheshire.
 
-|  | The application owns | mogget owns |
+|  | The application owns | cheshire owns |
 | --- | --- | --- |
-| Configuration | `mogget.config.ts` | every tsconfig, the Vite configs, the packaging config |
+| Configuration | `cheshire.config.ts` | every tsconfig, the Vite configs, the packaging config |
 | Contributions | `src/index.ts` — what the app declares | the contract it declares against, and the shell that renders it |
 | Entry points | _none — they are generated for it_ | the HTML entry, the renderer entry, the Electron main entry |
 | UI | its own views and components | the shell that hosts them |
-| Generated | _nothing — it is written for them_ | `.mogget/` |
+| Generated | _nothing — it is written for them_ | `.cheshire/` |
 | Build output | its own renderer bundle | its own packages, shipped built |
 
-That line generalises past files. mogget's capabilities arrive as **systems**, each reached through named
+That line generalises past files. cheshire's capabilities arrive as **systems**, each reached through named
 services — design, command, shell, customization, storage, identity, devtools — and the
 application's job at every one is to *declare into* it, never to implement it. The table above is the stage-1 slice of
 that: today only views cross the line, and by stage 2 commands and menus do. The whole list, and
@@ -85,29 +85,29 @@ which system each contribution belongs to, is [the application surface](../appli
 
 Two properties are worth naming, because they are the ones that decay quietly if nobody watches.
 
-**mogget arrives built.** What an application installs is compiled JavaScript, type declarations
+**cheshire arrives built.** What an application installs is compiled JavaScript, type declarations
 and a stylesheet — no framework TypeScript source at all. An app's build therefore compiles app
 code only, the same relationship it has with every other dependency
 ([premise 4](../premises.md)). The consequence for you, on day one: after editing framework
 source you must **rebuild and repack**, or your change silently does not appear in a consumer,
 with nothing said about why.
 
-**Generated files live in the application, not the framework.** `.mogget/` sits in the app's own
+**Generated files live in the application, not the framework.** `.cheshire/` sits in the app's own
 directory and is gitignored — the same convention as `.next/`, `.nuxt/` and `.svelte-kit/`.
 
 ```mermaid
 flowchart TD
   subgraph APP["Application — its own repo, e.g. demo"]
-    CFG["mogget.config.ts"]
+    CFG["cheshire.config.ts"]
     SRC["src/ — the app's domain<br/>index.ts declares its contributions"]
-    GEN[".mogget/ — GENERATED, gitignored<br/>index.html · renderer.tsx · config.ts<br/>main.mjs · prod/main.mjs · tsconfig.json · env.d.ts"]
+    GEN[".cheshire/ — GENERATED, gitignored<br/>index.html · renderer.tsx · config.ts<br/>main.mjs · prod/main.mjs · tsconfig.json · env.d.ts"]
     OUT["dist/ — packaged application"]
   end
-  subgraph FW["mogget — installed into node_modules"]
-    CORE["@mogget/core<br/>the config contract"]
-    WB["@mogget/shell<br/>the shell, built"]
-    RT["@mogget/runtime-electron<br/>window, lifecycle"]
-    CLI["mogget<br/>dev · build · package"]
+  subgraph FW["cheshire — installed into node_modules"]
+    CORE["@cheshire/core<br/>the config contract"]
+    WB["@cheshire/shell<br/>the shell, built"]
+    RT["@cheshire/runtime-electron<br/>window, lifecycle"]
+    CLI["cheshire<br/>dev · build · package"]
   end
   CLI -->|reads| CFG
   CLI -->|writes| GEN
@@ -120,7 +120,7 @@ flowchart TD
 
 ---
 
-## 3. Five problems, and how mogget solves them
+## 3. Five problems, and how cheshire solves them
 
 Every framework in this family answers the same five questions. The answers are what make one
 framework feel different from another.
@@ -130,20 +130,20 @@ framework feel different from another.
 **The problem.** The CLI is a binary in `node_modules`. It has to work out which directory is
 the application and where its code lives.
 
-**mogget's answer: the config file is the marker.** `mogget dev` looks for `mogget.config.ts` in the
+**cheshire's answer: the config file is the marker.** `cheshire dev` looks for `cheshire.config.ts` in the
 current directory. Present means this is an application; absent means the developer is in the
 wrong place, and the error says so and names the fix.
 
 This is the same convention as `next.config.js` or `vite.config.ts`, with one difference: for
-mogget the file is not optional. It carries the app's identity — `appId`, `productName` — which a
+cheshire the file is not optional. It carries the app's identity — `appId`, `productName` — which a
 desktop application cannot be built without.
 
 ### 3.2 Reading a config written in the application's language
 
-**The problem.** `mogget.config.ts` is TypeScript. Node does not run TypeScript, and the CLI needs
+**The problem.** `cheshire.config.ts` is TypeScript. Node does not run TypeScript, and the CLI needs
 the value inside it before any bundler has started.
 
-**mogget's answer: Vite's module runner loads it, once.** `runnerImport` compiles and evaluates
+**cheshire's answer: Vite's module runner loads it, once.** `runnerImport` compiles and evaluates
 the file in-process, and the CLI then applies defaults with `resolveConfig`. The result is a
 plain object that travels onward — into a generated module for the renderer, and into the
 Electron process as either an environment variable (development) or a value baked into the
@@ -158,8 +158,8 @@ config file or parses TypeScript.
 **The problem.** The framework has a shell, and the application has a config and some code. Some
 file has to import both and start something. Whoever owns that file owns the boot sequence.
 
-**mogget's answer: generated files in the application's directory.** On every run, `mogget` writes
-`.mogget/` into the app: the HTML entry, the renderer entry that mounts the shell, the config
+**cheshire's answer: generated files in the application's directory.** On every run, `cheshire` writes
+`.cheshire/` into the app: the HTML entry, the renderer entry that mounts the shell, the config
 as a module, the Electron entries, a tsconfig and an ambient CSS declaration. Every file is
 banner-marked as generated, and edits are lost on the next run.
 
@@ -167,7 +167,7 @@ The alternative — keeping the entry inside the framework package and reaching 
 virtual module specifiers — was rejected. It forces the framework to ship its source, and the app
 ends up holding both source and built output with nothing deciding which its imports resolve to.
 Writing a few files into the app is the cheaper half of that trade, and it buys one thing
-outright: because the importer physically lives in the app's directory, `@mogget/shell` and
+outright: because the importer physically lives in the app's directory, `@cheshire/shell` and
 `react` resolve by name from the app's own `node_modules`. Nothing has to be aliased into
 existence.
 
@@ -177,7 +177,7 @@ Three details in the generated tsconfig are load-bearing, and each was paid for 
   dependency and is not resolvable from the application. The generated ambient `declare module
   '*.css'` replaces the one thing the app needed from it.
 - **Every root listed explicitly.** TypeScript's wildcards skip dot-directories, so a file inside
-  `.mogget/` that a wildcard would have to find is checked by nothing at all — silently.
+  `.cheshire/` that a wildcard would have to find is checked by nothing at all — silently.
 - **`build` typechecks and `dev` does not.** A dev server that refuses to reload because a type
   is momentarily wrong is a worse tool.
 
@@ -186,7 +186,7 @@ Three details in the generated tsconfig are load-bearing, and each was paid for 
 **The problem.** An app contributes views, commands and menus. Something has to find them and
 register them.
 
-**mogget's answer: one default export, imported by the generated renderer.** `src/index.ts`
+**cheshire's answer: one default export, imported by the generated renderer.** `src/index.ts`
 default-exports `defineApp({ views })`, and the renderer the framework writes imports it by
 relative path. There is no registry to call, no lifecycle hook to implement, and no scanning of
 the filesystem for files that look like views — the app hands over a value, and the shell
@@ -194,7 +194,7 @@ renders it.
 
 ```ts
 // src/index.ts, in the application
-import { defineApp } from 'mogget'
+import { defineApp } from '@cheshire/app'
 import { Welcome } from './views/Welcome'
 
 export default defineApp({
@@ -214,9 +214,9 @@ Three properties of that shape are the point of it:
   from the runtime. That keeps [premise 5](../premises.md) intact: React is the platform's UI
   language under Electron and would be under Tauri too, so naming it is not naming the runtime.
 
-The contract lives in `@mogget/core` on a **separate entry**, `@mogget/core/views`, and re-exports
-through `mogget` so an application still names one package. The split is load-bearing:
-`@mogget/runtime-electron` imports the core barrel from the main process, and the barrel must stay
+The contract lives in `@cheshire/core` on a **separate entry**, `@cheshire/core/views`, and re-exports
+through `@cheshire/app` so an application still names one package. The split is load-bearing:
+`@cheshire/runtime-electron` imports the core barrel from the main process, and the barrel must stay
 React-free — with `skipLibCheck` on, an unresolved `react` inside a `.d.ts` degrades to `any` in
 silence rather than erroring.
 
@@ -227,7 +227,7 @@ Commands and menus (stage 2) extend the same object. Nothing about the mechanism
 **The problem.** Two processes, two build outputs, and a developer editing code in the middle of
 it.
 
-**mogget's answer:**
+**cheshire's answer:**
 
 - The **renderer** is served by Vite, with hot module replacement. Editing a view updates the
   window without a restart — app code is inside the dev module graph, reached through the
@@ -243,19 +243,19 @@ it.
 ```mermaid
 sequenceDiagram
   participant D as developer
-  participant CLI as mogget CLI
+  participant CLI as cheshire CLI
   participant V as Vite dev server
   participant E as Electron
 
   D->>CLI: pnpm dev
-  CLI->>CLI: find mogget.config.ts
+  CLI->>CLI: find cheshire.config.ts
   CLI->>CLI: runnerImport + resolveConfig
-  CLI->>CLI: generate .mogget/
+  CLI->>CLI: generate .cheshire/
   CLI->>V: createServer + listen
   V-->>CLI: http://localhost:5173/
   CLI->>CLI: is the Electron binary present?
   CLI->>E: spawn(main.mjs, dev flags)
-  Note over CLI,E: config + dev URL travel in MOGGET_RUNTIME_OPTIONS
+  Note over CLI,E: config + dev URL travel in CHESHIRE_RUNTIME_OPTIONS
   E->>E: start(options) → BrowserWindow
   E->>V: loadURL(dev server)
   V-->>E: the shell, hot-reloading
@@ -265,7 +265,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-  L["load config"] --> G["generate .mogget/"]
+  L["load config"] --> G["generate .cheshire/"]
   G --> T["tsc --noEmit<br/>app code is a gate"]
   T --> R["vite build → renderer bundle"]
   R --> M["vite build (ssr) → main bundle"]
@@ -281,7 +281,7 @@ bundled and do not need to be. Everything else is concatenated into one file.
 
 **Therefore a packaged application ships no `node_modules` at all.** The asar contains the main
 bundle, the renderer bundle and a `package.json`: about 396 KB for the stage-1 app. That in turn
-is what lets an application declare `mogget` as a **devDependency** and never name the runtime,
+is what lets an application declare `@cheshire/app` as a **devDependency** and never name the runtime,
 which is [premise 5](../premises.md) holding in practice rather than in principle.
 
 The trap under it: electron-builder collects production dependencies in a pass of its own,
@@ -297,7 +297,7 @@ Next.js has one runtime target: a browser, plus a server you do not ship. A desk
 two processes in one shipped artifact, and a native binary underneath.
 
 **Two processes, one program.** The **main** process is Node with the desktop APIs — windows,
-menus, dialogs, the filesystem. The **renderer** is a browser page. mogget owns both. An app's code
+menus, dialogs, the filesystem. The **renderer** is a browser page. cheshire owns both. An app's code
 runs only in the renderer, and never names the runtime: no Electron modules, no IPC channels, no
 process or window APIs ([premise 5](../premises.md)). The runtime *interfaces* that will make
 that portable arrive in phase 4, validated by an actual Tauri port rather than guessed at now.
@@ -308,7 +308,7 @@ never reaches those APIs anyway, none of it is a compromise. Links the app does 
 the user's browser, not in a chrome-less Electron window.
 
 **The binary is not installed for you.** Electron 43 declares no postinstall — it ships its
-downloader as a bin and expects someone to call it. Nobody does, so `mogget dev` checks for the
+downloader as a bin and expects someone to call it. Nobody does, so `cheshire dev` checks for the
 binary and fetches it. Without that, a generated app's very first `pnpm dev` dies on a cryptic
 missing-path error from inside `electron/index.js`.
 
@@ -319,15 +319,15 @@ installation is unaffected, because the installer's postinstall does SUID it.
 
 > This is **not** `webPreferences.sandbox`, which stays `true` everywhere. They are different
 > settings with confusingly similar names, and the flag is dev-only and Linux-only. The reasoning
-> lives at the call site in `cli/mogget/src/electron.ts` — keep it there.
+> lives at the call site in `cli/cheshire/src/electron.ts` — keep it there.
 
 ---
 
-## 6. Where mogget is deliberately different
+## 6. Where cheshire is deliberately different
 
 **A real install is the only proof.** Workspace links resolve source paths and hide packaging
 failures — an `exports` entry pointing at a `.ts` file works perfectly through a link and fails
-on every real install. So mogget's playground and every gate consume the framework from a **packed
+on every real install. So cheshire's playground and every gate consume the framework from a **packed
 tarball**, from the very first run. This is not caution; it is the rule that caught, during stage
 0, a package that installed with no type declarations at all because one build step emptied the
 directory another had written to.
@@ -339,7 +339,7 @@ version negotiation between host and extension, lazy activation events — and w
 **a contribution is a value the compiler can see**. A typo'd command id in a menu becomes a build
 error naming the application's own file, not a warning in a log at runtime.
 
-**Systems, not a pile of APIs.** Everything mogget ships is grouped as a system an application
+**Systems, not a pile of APIs.** Everything cheshire ships is grouped as a system an application
 declares into, and every system is reached through named **services** — one typed hook each.
 The test of whether something belongs in a system is whether an application would otherwise
 write it: a shortcut matcher, a menu bar, a theme switcher, a docking implementation. None of
@@ -360,24 +360,24 @@ Consolidation, documentation and refactoring queue _behind_ the next runnable mi
 
 | Term | Meaning |
 | --- | --- |
-| **application** / **app** | What a developer builds with mogget. mogget's customer. |
+| **application** / **app** | What a developer builds with cheshire. cheshire's customer. |
 | **the framework** | This repository: packages, templates, CLIs. |
-| **system** | A capability mogget ships whole, that an application declares into and never implements — design, command, workbench, settings, storage, diagnostics. |
-| **the design system** | Components, icons, and the design-token contract. `@mogget/ui`. Not built. |
-| **the shell** | The root of the renderer: title bar, **body**, status bar, and an overlay plane. `@mogget/shell`. |
+| **system** | A capability cheshire ships whole, that an application declares into and never implements — design, command, workbench, settings, storage, diagnostics. |
+| **the design system** | Components, icons, and the design-token contract. `@cheshire/ui`. Not built. |
+| **the shell** | The root of the renderer: title bar, **body**, status bar, and an overlay plane. `@cheshire/shell`. |
 | **the body** | The shell's middle zone, holding the regions. Named so it cannot be confused with *activity bar*. |
 | **the command system** | Commands, shortcuts, menus, context menus, the palette. A menu item is a *command reference* — it never holds a handler. Not built. |
-| **the config contract** | `mogget.config.ts` — what the application *is*. |
+| **the config contract** | `cheshire.config.ts` — what the application *is*. |
 | **the contribution contract** | `src/index.ts` — what the application *contributes*. |
-| **template** | An opinionated blueprint: a configuration of mogget's systems, materialised by `create-mogget`. `workbench` is the only one built. |
+| **template** | An opinionated blueprint: a configuration of cheshire's systems, materialised by `create-cheshire`. `workbench` is the only one built. |
 | **view** | An id, a title, and a React component. What the shell renders. |
-| **derivatives** | The generated contents of `.mogget/`. Rewritten every run, never edited. |
+| **derivatives** | The generated contents of `.cheshire/`. Rewritten every run, never edited. |
 | **the seam** | The published surface: what an app can import and nothing more. |
 | **main process** | Electron's Node process. Owns windows and the desktop. Framework-only. |
 | **renderer** | The browser page. Where app UI runs. |
 | **asar** | Electron's archive format for an app's files inside a package. |
 | **the proof gate** | pack tarballs → generate an app → build → run it, on real artifacts. |
-| **workbench** | The name of a *template* — the VS Code-like blueprint. Not the package that draws it; that is `@mogget/shell`. |
+| **workbench** | The name of a *template* — the VS Code-like blueprint. Not the package that draws it; that is `@cheshire/shell`. |
 
 ---
 

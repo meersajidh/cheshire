@@ -1,18 +1,18 @@
 {
-  "name": "@mogget/runtime-electron",
+  "name": "@cheshire/runtime-electron",
   "version": "0.1.0",
   "type": "module",
-  "description": "mogget's Electron runtime — process entry, window creation, lifecycle",
+  "description": "cheshire's Electron runtime — process entry, window creation, lifecycle",
   "license": "MIT",
-  "homepage": "https://github.com/meersajidh/mogget",
+  "homepage": "https://github.com/meersajidh/cheshire",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/meersajidh/mogget.git",
+    "url": "git+https://github.com/meersajidh/cheshire.git",
     "directory": "packages/runtime/electron"
   },
-  "bugs": "https://github.com/meersajidh/mogget/issues",
+  "bugs": "https://github.com/meersajidh/cheshire/issues",
   "keywords": [
-    "mogget",
+    "cheshire",
     "desktop",
     "framework",
     "electron"
@@ -39,7 +39,7 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@mogget/core": "workspace:^"
+    "@cheshire/core": "workspace:^"
   },
   "devDependencies": {
     "electron": "catalog:",

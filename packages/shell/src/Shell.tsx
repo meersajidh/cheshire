@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import type { ViewContribution } from '@mogget/core/views'
+import type { ViewContribution } from '@cheshire/core/views'
 
 export interface ShellProps {
-  /** Shown in the title strip and the empty state. Comes from `mogget.config.ts`. */
+  /** Shown in the title strip and the empty state. Comes from `cheshire.config.ts`. */
   productName: string
   /** What the application contributed from `src/index.ts`. May be empty. */
   views: ViewContribution[]
@@ -26,24 +26,24 @@ export function Shell({ productName, views }: ShellProps) {
   const active = views.find((view) => view.id === activeId)
 
   return (
-    <div className="mogget-shell">
-      <nav className="mogget-activity-bar" aria-label="Activity">
-        <span className="mogget-activity-mark" aria-hidden="true">
+    <div className="cheshire-shell">
+      <nav className="cheshire-activity-bar" aria-label="Activity">
+        <span className="cheshire-activity-mark" aria-hidden="true">
           {productName.slice(0, 1).toUpperCase()}
         </span>
       </nav>
 
-      <aside className="mogget-sidebar" aria-label="Sidebar">
-        <h1 className="mogget-sidebar-title">{productName}</h1>
+      <aside className="cheshire-sidebar" aria-label="Sidebar">
+        <h1 className="cheshire-sidebar-title">{productName}</h1>
         {views.length === 0 ? (
-          <p className="mogget-sidebar-hint">No views contributed yet.</p>
+          <p className="cheshire-sidebar-hint">No views contributed yet.</p>
         ) : (
-          <ul className="mogget-view-list">
+          <ul className="cheshire-view-list">
             {views.map((view) => (
               <li key={view.id}>
                 <button
                   type="button"
-                  className="mogget-view-tab"
+                  className="cheshire-view-tab"
                   aria-current={view.id === activeId}
                   onClick={() => setActiveId(view.id)}
                 >
@@ -55,11 +55,11 @@ export function Shell({ productName, views }: ShellProps) {
         )}
       </aside>
 
-      <main className="mogget-editor-area">{active ? <ActiveView view={active} /> : <EmptyState />}</main>
+      <main className="cheshire-editor-area">{active ? <ActiveView view={active} /> : <EmptyState />}</main>
 
-      <footer className="mogget-status-bar">
-        <span>mogget</span>
-        <span className="mogget-status-spacer" />
+      <footer className="cheshire-status-bar">
+        <span>cheshire</span>
+        <span className="cheshire-status-spacer" />
         <span>ready</span>
       </footer>
     </div>
@@ -73,9 +73,9 @@ export function Shell({ productName, views }: ShellProps) {
 function ActiveView({ view }: { view: ViewContribution }) {
   const Component = view.component
   return (
-    <section className="mogget-view" key={view.id}>
-      <header className="mogget-view-header">{view.title}</header>
-      <div className="mogget-view-body">
+    <section className="cheshire-view" key={view.id}>
+      <header className="cheshire-view-header">{view.title}</header>
+      <div className="cheshire-view-body">
         <Component />
       </div>
     </section>
@@ -84,9 +84,9 @@ function ActiveView({ view }: { view: ViewContribution }) {
 
 function EmptyState() {
   return (
-    <div className="mogget-empty-state">
-      <p className="mogget-empty-title">The shell is running.</p>
-      <p className="mogget-empty-body">
+    <div className="cheshire-empty-state">
+      <p className="cheshire-empty-title">The shell is running.</p>
+      <p className="cheshire-empty-body">
         Contribute a view from your app&apos;s <code>src/</code> and it renders here.
       </p>
     </div>

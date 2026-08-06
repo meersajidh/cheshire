@@ -1,23 +1,23 @@
 /**
  * The application-facing module surface. An application imports exactly this
- * from `mogget` — the two contracts and their types — and nothing else. Every
+ * from `cheshire` — the two contracts and their types — and nothing else. Every
  * other export of this package is CLI internals, reachable only through the
- * `mogget` bin.
+ * `cheshire` bin.
  *
  * `defineConfig` says what the application *is*; `defineApp` says what it
- * *contributes*. Both live in `@mogget/core`, and both arrive here so that an
+ * *contributes*. Both live in `@cheshire/core`, and both arrive here so that an
  * application names one package.
  */
 export {
   defineConfig,
-  type MoggetConfig,
-  type ResolvedMoggetConfig,
+  type CheshireConfig,
+  type ResolvedCheshireConfig,
   type WindowConfig,
-} from '@mogget/core'
+} from '@cheshire/core'
 
 export {
   defineApp,
   type AppDefinition,
   type ResolvedApp,
   type ViewContribution,
-} from '@mogget/core/views'
+} from '@cheshire/core/views'

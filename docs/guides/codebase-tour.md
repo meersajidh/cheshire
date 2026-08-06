@@ -1,6 +1,6 @@
 # Codebase tour
 
-> **What this is.** A walk through mogget's code in the order it actually runs. It follows one
+> **What this is.** A walk through cheshire's code in the order it actually runs. It follows one
 > `pnpm dev` from the developer's keystroke to a painted window, then `build` and `package` to an
 > installable application, naming the file and line at each step.
 >
@@ -12,7 +12,7 @@
 > small on purpose: about 1,550 lines of framework source across five packages. You can read all
 > of it in an afternoon, and this tour is a suggestion for the order.
 >
-> **A warning about scale.** mogget's design documents describe *systems* — a design system, a
+> **A warning about scale.** cheshire's design documents describe *systems* — a design system, a
 > command system, storage, settings — and almost none of that is code yet. This tour is the honest
 > counterweight: it walks what exists. When the two disagree, the code is right and
 > [the application surface](../application-surface.md) is intent.
@@ -42,20 +42,20 @@ section on it at the end.
 ## Orientation: five packages, two CLIs, one template
 
 ```
-mogget/
+cheshire/
 ├── packages/
-│   ├── core/                  @mogget/core              the config + contribution contracts
-│   ├── shell/                 @mogget/shell             the React shell
-│   └── runtime/electron/      @mogget/runtime-electron  window + lifecycle
+│   ├── core/                  @cheshire/core              the config + contribution contracts
+│   ├── shell/                 @cheshire/shell             the React shell
+│   └── runtime/electron/      @cheshire/runtime-electron  window + lifecycle
 ├── cli/
-│   ├── mogget/                 mogget                    dev · build · package
-│   └── create-mogget/          create-mogget             generate an application
+│   ├── cheshire/                 cheshire                    dev · build · package
+│   └── create-cheshire/          create-cheshire             generate an application
 ├── templates/workbench/       a blueprint (not a workspace package)
 └── docs/
 ```
 
-A **template** is an opinionated blueprint — a configuration of mogget's systems that
-`create-mogget` materialises into an application (design & roadmap §5). `workbench` is the only one
+A **template** is an opinionated blueprint — a configuration of cheshire's systems that
+`create-cheshire` materialises into an application (design & roadmap §5). `workbench` is the only one
 that exists; `chat` and `community` are named shapes and nothing more. Today a template configures
 very little, because there is very little to configure — that grows with the systems, not ahead of
 them.
@@ -64,14 +64,14 @@ Split by who runs the code, which is the split that matters when you are looking
 
 | Runs in | Packages |
 | --- | --- |
-| The developer's terminal | `mogget`, `create-mogget` |
-| Electron's main process | `@mogget/runtime-electron` |
-| The browser page | `@mogget/shell` |
-| All three | `@mogget/core` — types plus four pure functions, on two entries |
+| The developer's terminal | `@cheshire/app`, `create-cheshire` |
+| Electron's main process | `@cheshire/runtime-electron` |
+| The browser page | `@cheshire/shell` |
+| All three | `@cheshire/core` — types plus four pure functions, on two entries |
 
-`@mogget/core` has a second entry, `@mogget/core/views`, and the split is not cosmetic. It holds the
+`@cheshire/core` has a second entry, `@cheshire/core/views`, and the split is not cosmetic. It holds the
 contribution contract, which names React's `ComponentType`; the barrel stays React-free because
-`@mogget/runtime-electron` imports it from Electron's main process. With `skipLibCheck` on, an
+`@cheshire/runtime-electron` imports it from Electron's main process. With `skipLibCheck` on, an
 unresolved `react` inside a `.d.ts` silently becomes `any` rather than failing, so the separation
 is the only thing keeping that honest.
 
@@ -83,17 +83,17 @@ the seam would prove an arrangement no consumer can reproduce.
 
 ## Part 1 — `pnpm dev`, end to end
 
-A generated application's `package.json` has `"dev": "mogget dev"`. Everything below follows from
+A generated application's `package.json` has `"dev": "cheshire dev"`. Everything below follows from
 those two words.
 
 ### 1. The CLI dispatches
 
-`cli/mogget/src/cli.ts` — a shebang, a switch, and an error handler.
+`cli/cheshire/src/cli.ts` — a shebang, a switch, and an error handler.
 
 The error handler at the bottom is the part worth noticing:
 
 ```ts
-if (error instanceof MoggetCliError) {
+if (error instanceof CheshireCliError) {
   console.error(`\n${error.message}\n`)
   process.exitCode = 1
 } else {
@@ -101,33 +101,33 @@ if (error instanceof MoggetCliError) {
 }
 ```
 
-`MoggetCliError` (`cli/mogget/src/errors.ts:6`) means "this message is already the whole story for
+`CheshireCliError` (`cli/cheshire/src/errors.ts:6`) means "this message is already the whole story for
 the developer reading it" — printed without a stack, because a stack through framework internals
-tells an application author nothing they can act on. Anything else is a bug in mogget and keeps its
+tells an application author nothing they can act on. Anything else is a bug in cheshire and keeps its
 stack. When you add a CLI failure path, that is the choice you are making.
 
 ### 2. Finding and reading the application
 
-`cli/mogget/src/app.ts:30` — `loadApp()`.
+`cli/cheshire/src/app.ts:30` — `loadApp()`.
 
 ```ts
-const { module } = await runnerImport<{ default?: MoggetConfig }>(configPath)
+const { module } = await runnerImport<{ default?: CheshireConfig }>(configPath)
 ```
 
 Three things happen in twenty lines:
 
-1. **`mogget.config.ts` is the marker.** No file, no application — and the error names the fix
+1. **`cheshire.config.ts` is the marker.** No file, no application — and the error names the fix
    (`app.ts:35`).
 2. **Vite's module runner evaluates the TypeScript** (`app.ts:41`). This is the only place in
-   mogget that loads TypeScript at run time.
-3. **`resolveConfig` applies defaults** (`app.ts:48`), and `MoggetConfigError` is re-wrapped as a
-   `MoggetCliError` so it arrives stack-free.
+   cheshire that loads TypeScript at run time.
+3. **`resolveConfig` applies defaults** (`app.ts:48`), and `CheshireConfigError` is re-wrapped as a
+   `CheshireCliError` so it arrives stack-free.
 
-The result is an `AppContext` (`app.ts:9`): the app root, the config path, the `.mogget/` path, and
+The result is an `AppContext` (`app.ts:9`): the app root, the config path, the `.cheshire/` path, and
 the resolved config. Every command takes one and passes it around.
 
 Follow `resolveConfig` into `packages/core/src/config.ts:49` while you are here — it is 25 lines,
-and the whole config contract is the file above it. Note the error messages: `` `mogget.config.ts`
+and the whole config contract is the file above it. Note the error messages: `` `cheshire.config.ts`
 is missing `appId`. Add it, e.g. `appId: 'com.example.my-app'` `` — field, file and fix in one
 sentence. That is the house style for anything a developer reads.
 
@@ -136,9 +136,9 @@ Its sibling `packages/core/src/views.ts` is the contribution contract, and reads
 `src/index.ts` and the field. `resolveApp` runs in the renderer rather than here — the CLI never
 looks at what an app contributes.
 
-### 3. Generating `.mogget/`
+### 3. Generating `.cheshire/`
 
-`cli/mogget/src/generate.ts:35` — `generate()` writes seven files and returns the paths worth
+`cli/cheshire/src/generate.ts:35` — `generate()` writes seven files and returns the paths worth
 naming.
 
 | File | What it is |
@@ -151,7 +151,7 @@ naming.
 | `tsconfig.json` | What typechecks the application |
 | `env.d.ts` | `declare module '*.css'` |
 
-Each carries a banner: _"Generated by mogget. Do not edit — this file is rewritten on every run."_
+Each carries a banner: _"Generated by cheshire. Do not edit — this file is rewritten on every run."_
 
 Read the generator functions in order — `indexHtml:64`, `rendererEntry:91`, `configModule:110`,
 `devMainEntry:126`, `prodMainEntry:146`, `tsconfig:170`. They are string templates, and the
@@ -166,17 +166,17 @@ mountShell({ config, app })
 ```
 
 That import is the **only** place the framework reads application code, and it is a plain relative
-path because `.mogget/` lives inside the application. `hasAppEntry:102` decides whether to emit it:
+path because `.cheshire/` lives inside the application. `hasAppEntry:102` decides whether to emit it:
 an app with no `src/index.ts` still gets a running shell and an empty state, rather than a
 module-resolution failure from a file the developer did not write.
 
 The two Electron entries are the other interesting pair:
 
 ```js
-// .mogget/main.mjs — development
-start(JSON.parse(process.env.MOGGET_RUNTIME_OPTIONS))
+// .cheshire/main.mjs — development
+start(JSON.parse(process.env.CHESHIRE_RUNTIME_OPTIONS))
 
-// .mogget/prod/main.mjs — packaged
+// .cheshire/prod/main.mjs — packaged
 start({
   config: { /* baked in at build time */ },
   rendererDir: fileURLToPath(new URL('../renderer', import.meta.url)),
@@ -192,7 +192,7 @@ comment names all three traps. Do not "clean up" the explicit `include` list.
 
 ### 4. The dev server
 
-`cli/mogget/src/dev.ts:15` — `dev()`, and `cli/mogget/src/renderer-config.ts:20` for the config it
+`cli/cheshire/src/dev.ts:15` — `dev()`, and `cli/cheshire/src/renderer-config.ts:20` for the config it
 uses.
 
 The Vite config is **in code, never on disk**. The application authors no build config, so there
@@ -201,10 +201,10 @@ is no file for it to have opinions about and no config file for Vite to find —
 
 Three settings are deliberate:
 
-- `root` is `.mogget/`, where the generated HTML lives.
+- `root` is `.cheshire/`, where the generated HTML lives.
 - `server.fs.allow` names the **app root**, because Vite's default allowlist is derived from
   `root`, which here is the generated subdirectory. Without it, `src/` is off-limits.
-- `cacheDir` is moved to `node_modules/.mogget-vite`; the default would put a `node_modules`
+- `cacheDir` is moved to `node_modules/.cheshire-vite`; the default would put a `node_modules`
   directory inside generated output.
 
 Ordering in `dev()` matters: the server must be listening before Electron starts, or the first
@@ -212,7 +212,7 @@ window load races the port (`dev.ts:20`).
 
 ### 5. The Electron binary, and the flags
 
-`cli/mogget/src/electron.ts`.
+`cli/cheshire/src/electron.ts`.
 
 `ensureElectronBinary():33` checks for the binary and downloads it if missing. This is not
 defensive coding — electron 43 declares **no postinstall**. It ships its downloader as a bin
@@ -227,11 +227,11 @@ nothing SUIDs `chrome-sandbox` inside `node_modules`, and it is a **different se
 that platform check, the comment is addressed to you.
 
 `launchElectron():87` spawns the binary with the generated entry and passes the config and dev URL
-through `MOGGET_RUNTIME_OPTIONS`.
+through `CHESHIRE_RUNTIME_OPTIONS`.
 
 ### 6. The main process
 
-`packages/runtime/electron/src/main.ts` — 77 lines, and the only file in mogget that imports
+`packages/runtime/electron/src/main.ts` — 77 lines, and the only file in cheshire that imports
 `electron`.
 
 `start(options):59` sets the app name and identifier, waits for `whenReady`, and creates a window.
@@ -284,25 +284,25 @@ the order of 400 lines.
 
 ## Part 2 — `pnpm build`
 
-`cli/mogget/src/build.ts:30`.
+`cli/cheshire/src/build.ts:30`.
 
-Same first two steps as `dev` — load the config, generate `.mogget/` — then three more:
+Same first two steps as `dev` — load the config, generate `.cheshire/` — then three more:
 
-1. **Typecheck the application** (`build.ts:35`). It spawns `tsc -p .mogget/tsconfig.json` using
+1. **Typecheck the application** (`build.ts:35`). It spawns `tsc -p .cheshire/tsconfig.json` using
    the TypeScript the _framework_ depends on, so the application does not need one. Errors come
    out as `src/index.ts(11,14): error TS2322: ...` — the app's file, the app's line, no framework
    stack.
 2. **Build the renderer** — the same Vite config as dev, with `build.outDir` and `base: './'`,
    because a packaged renderer is loaded from a `file://` path and not from the root of an origin.
-3. **Build the main process** (`cli/mogget/src/main-config.ts:27`).
+3. **Build the main process** (`cli/cheshire/src/main-config.ts:27`).
 
 That third step is the one to read properly. `RUNTIME_PROVIDED` at `main-config.ts:17` is
 `electron` plus every Node builtin, in both bare and `node:` form. They stay external because they
 are baked into the Electron binary and exist only at run time — you cannot bundle them, and you do
-not need to. Everything else, including all of mogget's own packages, is inlined
+not need to. Everything else, including all of cheshire's own packages, is inlined
 (`ssr: { noExternal: true }` at `main-config.ts:49`).
 
-The output is one self-contained `.mogget/dist/main/main.mjs`. `entryFileNames: 'main.mjs'` is
+The output is one self-contained `.cheshire/dist/main/main.mjs`. `entryFileNames: 'main.mjs'` is
 forced so the entry is unambiguously ESM to Electron regardless of the surrounding
 `package.json`.
 
@@ -310,7 +310,7 @@ forced so the entry is unambiguously ESM to Electron regardless of the surroundi
 
 ## Part 3 — `pnpm package`
 
-`cli/mogget/src/pack.ts:26` — `packageApp()` builds, then hands the result to electron-builder's
+`cli/cheshire/src/pack.ts:26` — `packageApp()` builds, then hands the result to electron-builder's
 programmatic API. `builderConfig():44` is the whole configuration, derived from the app's config;
 nothing is authored by the app.
 
@@ -322,7 +322,7 @@ resolves it from its own dependency and passes it in (`pack.ts:86`).
 
 **`files` with `!node_modules/**`.** The renderer and main bundles are the entire package. The
 negation is not redundant: electron-builder collects production dependencies in a pass of its own,
-_outside_ these patterns. Without it, an app that names `mogget` as a runtime dependency ships
+_outside_ these patterns. Without it, an app that names `@cheshire/app` as a runtime dependency ships
 Vite, TypeScript and electron-builder inside its own asar — measured, during stage 0, at 74 MB
 versus 396 KB.
 
@@ -348,17 +348,17 @@ there, one of the two defences above has broken.
 > **Running the unpacked build on Linux** aborts with _"The SUID sandbox helper binary was found,
 > but is not configured correctly"_. That is correct behaviour, not a bug: `--dir` output was never
 > installed, so `chrome-sandbox` is not root-SUID. A real installation's postinstall does that.
-> To smoke-test the directory, pass `--no-sandbox` **by hand**, on the command line. mogget never
+> To smoke-test the directory, pass `--no-sandbox` **by hand**, on the command line. cheshire never
 > puts that flag in a package.
 
 ---
 
-## Part 4 — `create-mogget`
+## Part 4 — `create-cheshire`
 
-`cli/create-mogget/src/`. Four small files.
+`cli/create-cheshire/src/`. Four small files.
 
 - **`identity.ts:26`** — `deriveIdentity()` turns one typed word into `name`, `appId` and
-  `productName`. The guesses land in `mogget.config.ts` as ordinary editable values, rather than
+  `productName`. The guesses land in `cheshire.config.ts` as ordinary editable values, rather than
   behind prompts nobody wants to answer before seeing the app run once.
 - **`scaffold.ts:31`** — copies the template, restores `.gitignore`, and substitutes `{{tokens}}`.
 - **`local-tarballs.ts:16`** — `--from-tarballs`, for the proof gate.
@@ -371,14 +371,14 @@ file under a name that survives packing and generation renames it back (`scaffol
 this, every generated repository commits `node_modules`.
 
 **The template ships inside the package.** It lives at the repository root, where it is edited and
-reviewed on its own, and `cli/create-mogget/scripts/copy-template.mjs` copies it into
+reviewed on its own, and `cli/create-cheshire/scripts/copy-template.mjs` copies it into
 `dist/template` at build time — a published generator has no repository to read from.
 
 `useLocalTarballs()` exists for one reason: before a release there is nothing published to install
 from, so the gate packs tarballs and generates against those. It rewrites the app's
 devDependencies to `file:` specifiers, and appends `overrides:` to the app's `pnpm-workspace.yaml`
-— because `pnpm pack` substitutes a version for `workspace:*`, so a packed `mogget` asks for
-`@mogget/core@0.0.0`, which no registry has. It changes nothing else about the generated app.
+— because `pnpm pack` substitutes a version for `workspace:*`, so a packed `@cheshire/app` asks for
+`@cheshire/core@0.0.0`, which no registry has. It changes nothing else about the generated app.
 
 ---
 
@@ -398,16 +398,16 @@ pnpm pack:local
 
 # 2. generate, install, and run for real
 cd .local/gate
-pnpm exec create-mogget demo --from-tarballs "$PWD/../tarballs"
+pnpm exec create-cheshire demo --from-tarballs "$PWD/../tarballs"
 cd demo && pnpm dev && pnpm build && pnpm package --dir
 ```
 
-**A generated application is pnpm-only, and `create-mogget` enforces it** — it runs `pnpm install`
+**A generated application is pnpm-only, and `create-cheshire` enforces it** — it runs `pnpm install`
 whatever invoked it, and refuses with a message naming the fix if pnpm is absent. Two things make
 that non-negotiable: `pnpm-workspace.yaml` carries `nodeLinker: hoisted`, which npm and yarn have
 no equivalent for and electron-builder needs on Windows; and in tarball mode the `overrides:` block
-that resolves every `@mogget/*` request lives in that same file, which nothing else reads. Detecting
-the caller's package manager used to be the behaviour, and it offered a choice mogget cannot honour:
+that resolves every `@cheshire/*` request lives in that same file, which nothing else reads. Detecting
+the caller's package manager used to be the behaviour, and it offered a choice cheshire cannot honour:
 npm 404s in tarball mode, and "succeeds" in registry mode while silently ignoring the linker.
 
 After that, the loop while you work on the framework is one command plus one install:
@@ -444,10 +444,10 @@ What stage 2 and beyond will touch, and what is deliberately empty today:
 | `AppDefinition` | `views` | Stage 2: `commands` and `menus` — the command system's contract |
 | `ViewContribution` | `id`, `title`, `component` | Icons, placement, per-view state |
 | Active view | `useState` in `Workbench` | Stage 3: persisted across restarts |
-| `MoggetConfig` | `appId`, `productName`, `window` | A `services` block — how a template declares which systems are switched on |
-| `@mogget/runtime-electron` | One window, **no IPC and no preload** | Stage 2a: a preload membrane, window controls, a CSP |
-| Design system | Hand-written CSS in `@mogget/shell` | `@mogget/ui` — components, icons, a two-layer token contract |
-| Host process | Does not exist | The application's own backend, brokered by mogget (surface doc §4) |
+| `CheshireConfig` | `appId`, `productName`, `window` | A `services` block — how a template declares which systems are switched on |
+| `@cheshire/runtime-electron` | One window, **no IPC and no preload** | Stage 2a: a preload membrane, window controls, a CSP |
+| Design system | Hand-written CSS in `@cheshire/shell` | `@cheshire/ui` — components, icons, a two-layer token contract |
+| Host process | Does not exist | The application's own backend, brokered by cheshire (surface doc §4) |
 | Runtime abstraction | Electron named directly, inside the runtime package | Phase 4, validated by a Tauri port |
 
 Read that table against [the application surface](../application-surface.md) and the size of the
@@ -470,11 +470,11 @@ Small experiments, roughly in order of how much they teach:
 2. **Contribute a second view.** Add one to the `views` array and watch it appear in the sidebar.
    Give it the same `id` as the first and you get `resolveApp`'s duplicate-id error, naming
    `src/index.ts`.
-3. **Read the generated directory.** `cat .mogget/renderer.tsx .mogget/prod/main.mjs`. Then delete
-   `.mogget/` entirely and run `pnpm dev` — it comes straight back.
-4. **Change the config.** Set `window.width` in `mogget.config.ts` and restart. Follow the value
+3. **Read the generated directory.** `cat .cheshire/renderer.tsx .cheshire/prod/main.mjs`. Then delete
+   `.cheshire/` entirely and run `pnpm dev` — it comes straight back.
+4. **Change the config.** Set `window.width` in `cheshire.config.ts` and restart. Follow the value
    from the file through `loadApp` to `createWindow`.
-5. **Look inside a package.** `tar tzf .local/tarballs/mogget-shell-0.0.0.tgz` — `dist/lib` and
+5. **Look inside a package.** `tar tzf .local/tarballs/cheshire-shell-0.0.0.tgz` — `dist/lib` and
    `dist/types`, and no source. If `dist/types` were ever missing, an app would install with no
    type declarations and every import would be `any`. That has happened once.
 6. **Inspect an asar.** As in Part 3. Watch for anything that is not the two built trees.

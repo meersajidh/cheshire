@@ -1,8 +1,8 @@
-# mogget — Design & Roadmap
+# cheshire — Design & Roadmap
 
 > **Version:** 0.1 (living document) · **Date:** 2026-08-03
 >
-> Upstream: [premises.md](premises.md). This document describes how mogget is structured
+> Upstream: [premises.md](premises.md). This document describes how cheshire is structured
 > and built; the premises say what is true at all times. Where the two disagree, the
 > premises win or are amended explicitly.
 >
@@ -15,12 +15,12 @@
 
 ## 1. Purpose
 
-mogget is a **platform for building desktop applications**. The goal is not one
+cheshire is a **platform for building desktop applications**. The goal is not one
 application — it is the platform from which many applications are created with a single
 command:
 
 ```bash
-pnpm create mogget my-app
+pnpm create cheshire my-app
 ```
 
 After that command, a developer has a fully configured, runnable desktop application and
@@ -74,7 +74,7 @@ Condensed from the premises; stated here so the design reads on its own.
 
 ## 4. The two products
 
-The most important structural fact (premise 2): mogget is **two products**.
+The most important structural fact (premise 2): cheshire is **two products**.
 
 ```
                         YOU
@@ -82,13 +82,13 @@ The most important structural fact (premise 2): mogget is **two products**.
              ┌───────────┴────────────┐
              ▼                        ▼
      Framework Product        Generated Application
-     (repo: mogget)            (the customer's repo)
+     (repo: cheshire)            (the customer's repo)
 ```
 
 - The **framework product** is what framework developers maintain: packages, template,
   CLI, docs. Its user is an application developer.
 - A **generated application** is a consumer. It contains no framework source — only
-  `@mogget/*` dependencies — exactly as `npm install react` copies no React source into an
+  `@cheshire/*` dependencies — exactly as `npm install react` copies no React source into an
   app.
 
 ```
@@ -108,19 +108,19 @@ playground lives in its own.
      ┌───────────┬───────┴──────┬────────────────┐
      ▼           ▼              ▼                ▼
   Packages    Template         CLI          Playground
-  (mogget)     (mogget)         (mogget)       (play-mogget)
+  (cheshire)     (cheshire)         (cheshire)       (play-cheshire)
 ```
 
 ### Packages
 
-The framework code itself, published under the `@mogget/*` scope:
+The framework code itself, published under the `@cheshire/*` scope:
 
 ```
-@mogget/core        @mogget/react          @mogget/ui
-@mogget/shell       @mogget/layout         @mogget/commands
-@mogget/customization                     @mogget/storage
-@mogget/identity    @mogget/devtools       @mogget/runtime
-@mogget/host
+@cheshire/core        @cheshire/react          @cheshire/ui
+@cheshire/shell       @cheshire/layout         @cheshire/commands
+@cheshire/customization                     @cheshire/storage
+@cheshire/identity    @cheshire/devtools       @cheshire/runtime
+@cheshire/host
 ```
 
 Packages are the delivery unit; **systems** (§2) are the unit of meaning, and one system may
@@ -129,8 +129,8 @@ case by case as the platform grows — the list above is the current shape, not 
 
 ### Template
 
-A template is an **opinionated blueprint: a configuration of the systems mogget encapsulates**,
-plus the contributions and labels that suit a shape of application. `create-mogget` materialises
+A template is an **opinionated blueprint: a configuration of the systems cheshire encapsulates**,
+plus the contributions and labels that suit a shape of application. `create-cheshire` materialises
 one into a generated app.
 
 `workbench` — VS Code-like — is the first and currently only template. The named next shapes
@@ -138,7 +138,7 @@ are `chat` (Slack-like) and `community` (Discord-like). Templates differ in **wh
 switched on and what things are called**, not in code an application would otherwise write: one
 carries structured storage, another carries only blobs, another carries neither.
 
-**A template's choices are declared in `mogget.config.ts`**, which makes the template a _preset
+**A template's choices are declared in `cheshire.config.ts`**, which makes the template a _preset
 over the config contract_ rather than a parallel mechanism (premise 3 — one place where an
 application says what it _is_):
 
@@ -171,39 +171,39 @@ under different names:
 | panel              | _(off)_      |
 | status bar         | presence     |
 
-So `@mogget/shell` is general rather than IDE-shaped, and every system beneath it is built,
+So `@cheshire/shell` is general rather than IDE-shaped, and every system beneath it is built,
 themed and tested once. `workbench` is the name of a _template_, not of the package that draws it.
 
-**The playground is not upstream of the template.** `play-mogget` exercises the platform surface
+**The playground is not upstream of the template.** `play-cheshire` exercises the platform surface
 and is where a shape is discovered; a template is authored and versioned with the framework,
 and is not a snapshot of any one playground app.
 
 ### CLI — two responsibilities, two tools
 
-1. **`create-mogget`** (invoked as `npm create mogget`) — project generation only: ask the
+1. **`create-cheshire`** (invoked as `npm create cheshire`) — project generation only: ask the
    project name, copy the template, replace placeholders, install dependencies, `git init`,
    print next steps. Nothing more.
 
-   **A generated application requires pnpm**, and `create-mogget` installs with it regardless of
+   **A generated application requires pnpm**, and `create-cheshire` installs with it regardless of
    what invoked the generator. `pnpm-workspace.yaml` carries `nodeLinker: hoisted`, which npm and
    yarn have no equivalent for and which electron-builder needs to package correctly on Windows;
    the generated manifest pins the version in `packageManager` so corepack agrees. Missing pnpm is
    a clear refusal naming the fix, with the application still generated — never a registry 404.
 
-2. **`mogget`** — the framework tooling an application uses day to day: `dev`, `build`,
+2. **`@cheshire/app`** — the framework tooling an application uses day to day: `dev`, `build`,
    `package`. Owned and shipped by the framework, so application authors never configure
    Electron or Vite targets themselves.
 
 Tooling is part of the framework. The generated application's `package.json` scripts call
-`mogget`, and the framework owns what those verbs mean.
+`cheshire`, and the framework owns what those verbs mean.
 
-### Playground — external repository `play-mogget`
+### Playground — external repository `play-cheshire`
 
 Development application(s) whose purpose is to dogfood the framework. Nothing seriously
 domain-specific; it exercises menus, docking, the command palette, theming — the platform
 surface itself.
 
-**It installs mogget from a packed tarball or a local registry — exactly what a real
+**It installs cheshire from a packed tarball or a local registry — exactly what a real
 developer gets. Never a workspace link** (premise 4): links resolve source paths and hide
 packaging failures.
 
@@ -212,7 +212,7 @@ packaging failures.
 Framework repository:
 
 ```
-mogget/
+cheshire/
 ├── packages/
 │   ├── core/
 │   ├── react/
@@ -224,17 +224,17 @@ mogget/
 │       └── electron/
 ├── templates/
 │   └── workbench/
-├── cli/                  # create-mogget + mogget tooling
+├── cli/                  # create-cheshire + cheshire tooling
 ├── docs/
 ├── scripts/
 ├── package.json
 └── pnpm-workspace.yaml
 ```
 
-Playground repository (separate; installs mogget like any consumer):
+Playground repository (separate; installs cheshire like any consumer):
 
 ```
-play-mogget/
+play-cheshire/
 └── apps/
 ```
 
@@ -246,23 +246,23 @@ it is not obvious.
 
 **core** — foundational services: lifecycle, events, logging, configuration, dependency
 injection. Also the two contracts an application declares against: the config contract on
-the barrel, and the contribution contract on `@mogget/core/views` — a separate entry so the
+the barrel, and the contribution contract on `@cheshire/core/views` — a separate entry so the
 barrel stays React-free for the main process.
 
 **react** — how an application reaches a service: **one typed hook per service**, from this
 package. `useCommands()`, `useSettings()`, `useTheme()`. No service ids, no registry, no
 provider to learn — autocomplete finds the surface and a missing provider is a type error.
 Both prior attempts used a service locator (`useService(CommandServiceId)`) over ~30 services;
-mogget has an order of magnitude fewer, so the indirection buys nothing and costs every reader a
+cheshire has an order of magnitude fewer, so the indirection buys nothing and costs every reader a
 hop. This is the _service_-facing API surface, deliberately not the component-facing one —
 that is `ui`.
 
 **ui** — **the design system.** Accessible primitives (shadcn-derived, vendored and shipped
-built), mogget's own primitives (`Icon` and its registry, `ResizeHandle`), `cn`, and the design
+built), cheshire's own primitives (`Icon` and its registry, `ResizeHandle`), `cn`, and the design
 token contract. **Two token layers and deliberately not three:** the shadcn CSS-var contract as
 real `:root` / `.dark` custom properties, plus an extension layer for what the contract has no
 equivalent for — type scale, spacing, shadows, chrome heights. **The palette is neutral on
-purpose:** mogget ships the token _contract_ and a neutral default, never a visual identity; an
+purpose:** cheshire ships the token _contract_ and a neutral default, never a visual identity; an
 application supplies its own CSS-var block. A palette that lands application-shaped stays that
 way.
 
@@ -308,7 +308,7 @@ mistake as `--no-sandbox` reaching a packaged build.
 native dialogs, native menus, auto-update. Safe renderer–main IPC is an internal detail
 here, not a package. Applications never import this directly (premise 5).
 
-**host** — the application's own backend process and the channel mogget brokers to it. Not
+**host** — the application's own backend process and the channel cheshire brokers to it. Not
 built; see [the application surface](application-surface.md) §4 for why it is a third
 process rather than code in main.
 
@@ -325,13 +325,13 @@ my-app/
 │   ├── commands/
 │   ├── menus/
 │   └── services/
-├── package.json          # scripts call the mogget CLI
-└── mogget.config.ts       # the config contract (premise 3)
+├── package.json          # scripts call the cheshire CLI
+└── cheshire.config.ts       # the config contract (premise 3)
 ```
 
 What the application does **not** contain: a process entry file, Electron/Vite config, a
-build pipeline, or any reference to the runtime. mogget owns the entry and generates what
-the entry needs; the application seats into the socket via two files — `mogget.config.ts`
+build pipeline, or any reference to the runtime. cheshire owns the entry and generates what
+the entry needs; the application seats into the socket via two files — `cheshire.config.ts`
 says what it _is_, `src/index.ts` says what it _contributes_. `src/index.ts` is the app's
 own file: the generated renderer imports it, and never writes it.
 
@@ -343,9 +343,9 @@ process, and the platform services — is [the application surface](application-
 ```
 Feature idea
    ▼
-Implement framework API        (mogget repo)
+Implement framework API        (cheshire repo)
    ▼
-Exercise it in the playground  (play-mogget, installed from tarball)
+Exercise it in the playground  (play-cheshire, installed from tarball)
    ▼
 Improve the API — repeat
    ▼
@@ -359,7 +359,7 @@ Release CLI
 The playground is never the product. It is the proving ground.
 
 **The proof gate** (premise 4): before a milestone closes, the loop
-`pack tarball → create-mogget → build → smoke test` runs against the real artifacts. The
+`pack tarball → create-cheshire → build → smoke test` runs against the real artifacts. The
 generated-from-tarball application is the ground truth; the playground is for speed.
 
 ## 10. Bootstrapping flow
@@ -367,19 +367,19 @@ generated-from-tarball application is the ground truth; the playground is for sp
 ```
 Developer
    ▼
-npm create mogget my-app
+npm create cheshire my-app
    ▼
-create-mogget: copy template → rename → update package.json → install → git init
+create-cheshire: copy template → rename → update package.json → install → git init
    ▼
-cd my-app && npm run dev     # invokes the mogget CLI
+cd my-app && npm run dev     # invokes the cheshire CLI
    ▼
 A workbench window opens. Ready.
 ```
 
 ## 11. Versioning
 
-Packages follow semantic versioning. `create-mogget` always generates projects pinned to a
-compatible, tested set of `@mogget/*` versions — a generated app never starts life on a
+Packages follow semantic versioning. `create-cheshire` always generates projects pinned to a
+compatible, tested set of `@cheshire/*` versions — a generated app never starts life on a
 mismatched matrix.
 
 ## 12. Runtime independence
@@ -388,7 +388,7 @@ A first-class strategic objective (premise 5), executed in two moves:
 
 1. **Now — the enforced invariant.** No application code names the runtime: no Electron
    modules, process/window APIs, IPC channels, or schemes. Everything reaches the runtime
-   through mogget's abstractions. This is testable from day one.
+   through cheshire's abstractions. This is testable from day one.
 2. **Phase 4 — the real test.** Introduce the runtime interfaces (`WindowService`,
    `MenuService`, `DialogService`, `FileSystemService`, …), decouple Electron behind them,
    and **prototype a Tauri backend**. The interfaces are validated by the port itself —
@@ -397,20 +397,20 @@ A first-class strategic objective (premise 5), executed in two moves:
 ```
         Application
             ▼
-   mogget runtime API          ◀── defined and hardened in Phase 4
+   cheshire runtime API          ◀── defined and hardened in Phase 4
             ▼
   Electron │ Tauri │ future
 ```
 
-mogget is not "an Electron framework". It is a desktop application platform whose first
+cheshire is not "an Electron framework". It is a desktop application platform whose first
 runtime is Electron.
 
 ## 13. Roadmap
 
 ### Phase 1 — Foundation
 
-Monorepo · Electron runtime · React integration · `create-mogget` · workbench template ·
-`mogget dev`/`build`.
+Monorepo · Electron runtime · React integration · `create-cheshire` · workbench template ·
+`cheshire dev`/`build`.
 
 ### Phase 2 — Workbench
 
@@ -430,7 +430,7 @@ porting.
 The platform's first honest end-to-end proof, kept visible from day one:
 
 ```
-pnpm create mogget demo
+pnpm create cheshire demo
 cd demo
 pnpm dev
 
@@ -445,7 +445,7 @@ Sliced so every stage ends with something that runs (premise 8):
 
 | Stage | Slice                | Exit condition (runs, and is run)                                                                                                                                                                             |
 | ----- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | Create → dev → build | `pnpm create mogget demo` generates an app with `mogget.config.ts`; `pnpm dev` opens the workbench shell; `pnpm build` produces a runnable package — mogget consumed **from a tarball** from the very first run. |
+| 0     | Create → dev → build | `pnpm create cheshire demo` generates an app with `cheshire.config.ts`; `pnpm dev` opens the workbench shell; `pnpm build` produces a runnable package — cheshire consumed **from a tarball** from the very first run. |
 | 1     | Views                | The app contributes a view; it renders in the workbench.                                                                                                                                                      |
 | 2     | Commands & menus     | The app's command appears in the menu and on a shortcut, and opens the view.                                                                                                                                  |
 | 3     | Layout persistence   | The app restarts with its layout preserved. Milestone A complete.                                                                                                                                             |
@@ -453,12 +453,12 @@ Sliced so every stage ends with something that runs (premise 8):
 ## 14. Final mental model
 
 ```text
-                     Framework Repository (mogget)
+                     Framework Repository (cheshire)
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
 │  packages/         templates/         cli/              │
-│  ├── core          workbench          create-mogget      │
-│  ├── react         (chat)             mogget             │
+│  ├── core          workbench          create-cheshire      │
+│  ├── react         (chat)             cheshire             │
 │  ├── ui            (community)           │              │
 │  ├── shell                               │              │
 │  ├── layout                              │              │
@@ -478,15 +478,15 @@ Sliced so every stage ends with something that runs (premise 8):
                      ┌─────────────────────┴─────────────────────┐
                      ▼                                           ▼
 ┌──────────────────────────────────┐   ┌──────────────────────────────────┐
-│ Generated Application            │   │ Playground (play-mogget repo)     │
+│ Generated Application            │   │ Playground (play-cheshire repo)     │
 │                                  │   │                                  │
 │  src/                            │   │  apps/                           │
 │  ├── index.ts   views/           │   │                                  │
 │  ├── commands/  services/        │   │  installs from tarball/registry  │
 │  └── features/  menus/           │   │  dogfoods the framework          │
-│  mogget.config.ts                 │   │                                  │
+│  cheshire.config.ts                 │   │                                  │
 │                                  │   │                                  │
-│  depends on @mogget/* packages    │   │  depends on @mogget/* packages    │
+│  depends on @cheshire/* packages    │   │  depends on @cheshire/* packages    │
 └──────────────────────────────────┘   └──────────────────────────────────┘
 ```
 
@@ -496,21 +496,30 @@ Sliced so every stage ends with something that runs (premise 8):
 
 | Thing                   | Name                                                       |
 | ----------------------- | ---------------------------------------------------------- |
-| Framework / repo        | `mogget`                                                    |
-| npm scope               | `@mogget/*`                                                 |
-| Create package          | `create-mogget` (`npm create mogget`)                        |
-| Tooling CLI             | `mogget`                                                    |
-| Config contract         | `mogget.config.ts` — `defineConfig({ ... })`                |
+| Framework / repo        | `cheshire`                                                    |
+| npm scope               | `@cheshire/*`                                                 |
+| Create package          | `create-cheshire` (`npm create cheshire`)                        |
+| Tooling CLI             | `@cheshire/app` — installs the `cheshire` command             |
+| Application facade      | `@cheshire/app` — the only package an application imports  |
+| Config contract         | `cheshire.config.ts` — `defineConfig({ ... })`                |
 | Contribution contract   | `src/index.ts` — default-exports `defineApp({ views })`    |
-| Contribution entry      | `@mogget/core/views`, re-exported through `mogget`           |
-| Playground repo         | `play-mogget`                                               |
-| Design system           | `@mogget/ui`                                                |
-| Command system          | `@mogget/commands` (internal to `shell` until extracted)    |
-| Shell system            | `@mogget/shell` + `@mogget/layout`                           |
+| Contribution entry      | `@cheshire/core/views`, re-exported through `@cheshire/app`   |
+| Playground repo         | `play-cheshire`                                               |
+| Design system           | `@cheshire/ui`                                                |
+| Command system          | `@cheshire/commands` (internal to `shell` until extracted)    |
+| Shell system            | `@cheshire/shell` + `@cheshire/layout`                           |
 | The shell's three zones | title bar · **body** · status bar                          |
 | Templates               | `workbench` (built) · `chat`, `community` (named, unbuilt) |
 
-npm registry status (checked 2026-08-03): unscoped `mogget` is taken by an unrelated
-package; `create-mogget` is free; availability of the `@mogget` org for public publishing is
-unverified. None of this blocks tarball/local-registry development; verify the org before
-the first public publish.
+npm registry status (checked 2026-08-06): the `@cheshire` org is **created and owned**, so the
+scope reserves every package on the roadmap. Unscoped `cheshire` is taken by an unrelated,
+dormant package (a websocket boardgame framework, last published 2022) — which is why there is
+no bare package and the application facade is `@cheshire/app`. `create-cheshire` is free, so
+`pnpm create cheshire my-app` reads exactly as intended, and the `cheshire` command still exists
+because a bin name lives in the application's own `node_modules/.bin` and never touches a
+registry.
+
+Two earlier names were abandoned at this step, both to registry collisions: `dinah` (bare name
+taken by a maintained DynamoDB client) and `mogget` (bare name free, but the `@mogget` org
+already owned by another user). The lesson that stuck: **a scope is the thing to secure first** —
+a bare name is a per-package lottery, an org reserves the whole family at once.

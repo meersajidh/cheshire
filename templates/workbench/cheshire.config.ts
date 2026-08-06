@@ -1,4 +1,4 @@
-import { defineConfig } from 'mogget'
+import { defineConfig } from '@cheshire/app'
 
 export default defineConfig({
   appId: '{{appId}}',

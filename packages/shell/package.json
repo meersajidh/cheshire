@@ -1,18 +1,18 @@
 {
-  "name": "@mogget/shell",
+  "name": "@cheshire/shell",
   "version": "0.1.0",
   "type": "module",
-  "description": "The mogget shell \u2014 title bar, body, status bar; the root of the renderer",
+  "description": "The cheshire shell \u2014 title bar, body, status bar; the root of the renderer",
   "license": "MIT",
-  "homepage": "https://github.com/meersajidh/mogget",
+  "homepage": "https://github.com/meersajidh/cheshire",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/meersajidh/mogget.git",
+    "url": "git+https://github.com/meersajidh/cheshire.git",
     "directory": "packages/shell"
   },
-  "bugs": "https://github.com/meersajidh/mogget/issues",
+  "bugs": "https://github.com/meersajidh/cheshire/issues",
   "keywords": [
-    "mogget",
+    "cheshire",
     "desktop",
     "framework",
     "react"
@@ -44,7 +44,7 @@
     "react-dom": "catalog:"
   },
   "dependencies": {
-    "@mogget/core": "workspace:^"
+    "@cheshire/core": "workspace:^"
   },
   "devDependencies": {
     "@types/react": "catalog:",

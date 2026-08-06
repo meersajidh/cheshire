@@ -1,13 +1,12 @@
-# @mogget/core
+# @cheshire/core
 
-Foundational services and the `mogget.config` contract for
-[mogget](https://github.com/meersajidh/mogget).
+Foundational services and the `cheshire.config` contract for
+[cheshire](https://github.com/meersajidh/cheshire).
 
-**You do not install this directly.** It arrives with `mogget`, and an application imports what
-it needs from `mogget` rather than from here.
+**You do not install this directly.** It arrives with `@cheshire/app`, which is what an application imports from.
 
 ```bash
-pnpm create mogget my-app
+pnpm create cheshire my-app
 ```
 
 ## What is in it
@@ -16,7 +15,7 @@ pnpm create mogget my-app
 - `defineApp` and the contribution contract — what an application declares that it *has*
 
 `./views` is a separate entry point on purpose: the core barrel is imported by
-`@mogget/runtime-electron` from the main process and must stay React-free.
+`@cheshire/runtime-electron` from the main process and must stay React-free.
 
 ## Status
 

@@ -34,16 +34,16 @@ const PACKAGES = [
   'packages/core',
   'packages/shell',
   'packages/runtime/electron',
-  'cli/mogget',
-  'cli/create-mogget',
+  'cli/cheshire',
+  'cli/create-cheshire',
 ]
 
 /**
- * The marker `create-mogget` writes above the overrides block it appends to a
+ * The marker `create-cheshire` writes above the overrides block it appends to a
  * generated app's `pnpm-workspace.yaml`. Refreshing replaces everything from
  * this line onward.
  *
- * Kept in sync by hand with `cli/create-mogget/src/local-tarballs.ts`. If the two
+ * Kept in sync by hand with `cli/create-cheshire/src/local-tarballs.ts`. If the two
  * ever disagree, `--refresh` appends a second overrides block instead of
  * replacing the first, and the install fails loudly rather than quietly.
  */
@@ -89,7 +89,7 @@ function main(argv) {
   for (const file of packed.sort()) console.log(`    ${file}`)
 
   if (options.refresh.length === 0) {
-    console.log(`\n  consumers: pnpm exec create-mogget <name> --from-tarballs ${TARBALL_DIR}`)
+    console.log(`\n  consumers: pnpm exec create-cheshire <name> --from-tarballs ${TARBALL_DIR}`)
     console.log(`  existing:  node scripts/pack-local.mjs --refresh <dir>\n`)
     return
   }
@@ -156,12 +156,12 @@ function refresh(targetDir) {
     if (!file.endsWith('.tgz')) continue
     const stem = file.replace(/-\d+\.\d+\.\d+.*\.tgz$/, '')
 
-    // `pnpm pack` drops the scope: `mogget-core-*.tgz` is `@mogget/core`. The two
+    // `pnpm pack` drops the scope: `cheshire-core-*.tgz` is `@cheshire/core`. The two
     // unscoped packages keep their own names, and anything else in this
     // directory is not ours to rewrite.
     let name
-    if (stem === 'mogget' || stem === 'create-mogget') name = stem
-    else if (stem.startsWith('mogget-')) name = `@mogget/${stem.slice('mogget-'.length)}`
+    if (stem === 'create-cheshire') name = stem
+    else if (stem.startsWith('cheshire-')) name = `@cheshire/${stem.slice('cheshire-'.length)}`
     else continue
 
     tarballs.set(name, join(TARBALL_DIR, file))
@@ -179,13 +179,13 @@ function refresh(targetDir) {
         continue
       }
 
-      // A mogget-scoped dependency with no tarball is a package that has been
+      // A cheshire-scoped dependency with no tarball is a package that has been
       // renamed or removed since this consumer was generated. Rewriting only
       // what matches would leave the dead specifier resolving to whatever stale
       // tarball is still on disk — a consumer that installs green and runs the
       // wrong code. Drop it and say so; the replacement arrives when the
       // consumer is regenerated from the current template.
-      if (name === 'mogget' || name === 'create-mogget' || name.startsWith('@mogget/')) {
+      if (name === 'create-cheshire' || name.startsWith('@cheshire/')) {
         delete manifest[group][name]
         dropped.push(name)
       }
@@ -195,17 +195,17 @@ function refresh(targetDir) {
   if (dropped.length > 0) {
     console.warn(
       `  warn  ${targetDir}: dropped ${dropped.join(', ')} — no such package is packed any more.\n` +
-        '        Regenerate this consumer with create-mogget; --refresh cannot add what a rename removed.',
+        '        Regenerate this consumer with create-cheshire; --refresh cannot add what a rename removed.',
     )
   }
 
   if (rewritten === 0) {
-    fail(`${targetDir} depends on no mogget package — is it a generated application?`)
+    fail(`${targetDir} depends on no cheshire package — is it a generated application?`)
   }
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
 
   // The framework's own cross-references need the same treatment: a packed
-  // `mogget` asks for `@mogget/core` at a version no registry has.
+  // `cheshire` asks for `@cheshire/core` at a version no registry has.
   const workspacePath = join(targetDir, 'pnpm-workspace.yaml')
   if (!existsSync(workspacePath)) return
 
@@ -214,7 +214,7 @@ function refresh(targetDir) {
   const base = marker === -1 ? existing.trimEnd() : existing.slice(0, marker).trimEnd()
 
   const entries = [...tarballs]
-    .filter(([name]) => name !== 'create-mogget')
+    .filter(([name]) => name !== 'create-cheshire')
     .map(([name, tarball]) => `  '${name}': file:${tarball}`)
     .sort()
     .join('\n')

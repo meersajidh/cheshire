@@ -1,13 +1,13 @@
-# @mogget/shell
+# @cheshire/shell
 
-The [mogget](https://github.com/meersajidh/mogget) shell — title bar, body, status bar; the root
+The [cheshire](https://github.com/meersajidh/cheshire) shell — title bar, body, status bar; the root
 of the renderer.
 
-**You do not install this directly.** It arrives with `mogget`, and the framework mounts it. An
+**You do not install this directly.** It arrives with `@cheshire/app`, and the framework mounts it. An
 application contributes views; the shell decides what is on screen.
 
 ```bash
-pnpm create mogget my-app
+pnpm create cheshire my-app
 ```
 
 ## Status

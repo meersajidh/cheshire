@@ -1,9 +1,9 @@
-# create-mogget
+# create-cheshire
 
-Generate a [mogget](https://github.com/meersajidh/mogget) desktop application.
+Generate a [cheshire](https://github.com/meersajidh/cheshire) desktop application.
 
 ```bash
-pnpm create mogget my-app
+pnpm create cheshire my-app
 cd my-app
 pnpm dev
 ```

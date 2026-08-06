@@ -20,18 +20,18 @@ const VALID_NAME = /^[a-z0-9][a-z0-9._-]*$/
  * Derive an application's identity from the one thing the developer typed.
  *
  * `appId` and `productName` are guesses, and are meant to be: they land in
- * `mogget.config.ts` as ordinary editable values rather than behind a prompt
+ * `cheshire.config.ts` as ordinary editable values rather than behind a prompt
  * nobody wants to answer before seeing the app run once.
  */
 export function deriveIdentity(rawName: string): AppIdentity {
   const name = rawName.trim()
 
   if (name === '') {
-    throw new InvalidNameError('create-mogget: give the application a name, e.g. `my-app`.')
+    throw new InvalidNameError('create-cheshire: give the application a name, e.g. `my-app`.')
   }
   if (!VALID_NAME.test(name)) {
     throw new InvalidNameError(
-      `create-mogget: \`${name}\` is not a usable application name.\n` +
+      `create-cheshire: \`${name}\` is not a usable application name.\n` +
         'Use lowercase letters, digits, hyphens, dots and underscores, starting with a letter or digit.',
     )
   }

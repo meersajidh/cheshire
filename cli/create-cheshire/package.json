@@ -1,18 +1,18 @@
 {
-  "name": "create-mogget",
+  "name": "create-cheshire",
   "version": "0.1.0",
   "type": "module",
-  "description": "Generate a mogget desktop application",
+  "description": "Generate a cheshire desktop application",
   "license": "MIT",
-  "homepage": "https://github.com/meersajidh/mogget",
+  "homepage": "https://github.com/meersajidh/cheshire",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/meersajidh/mogget.git",
-    "directory": "cli/create-mogget"
+    "url": "git+https://github.com/meersajidh/cheshire.git",
+    "directory": "cli/create-cheshire"
   },
-  "bugs": "https://github.com/meersajidh/mogget/issues",
+  "bugs": "https://github.com/meersajidh/cheshire/issues",
   "keywords": [
-    "mogget",
+    "cheshire",
     "desktop",
     "framework",
     "electron",
@@ -26,7 +26,7 @@
     "access": "public"
   },
   "bin": {
-    "create-mogget": "./dist/cli.js"
+    "create-cheshire": "./dist/cli.js"
   },
   "files": [
     "dist"

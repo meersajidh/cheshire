@@ -1,18 +1,18 @@
 {
-  "name": "@mogget/core",
+  "name": "@cheshire/core",
   "version": "0.1.0",
   "type": "module",
-  "description": "mogget foundational services and the mogget.config contract",
+  "description": "cheshire foundational services and the cheshire.config contract",
   "license": "MIT",
-  "homepage": "https://github.com/meersajidh/mogget",
+  "homepage": "https://github.com/meersajidh/cheshire",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/meersajidh/mogget.git",
+    "url": "git+https://github.com/meersajidh/cheshire.git",
     "directory": "packages/core"
   },
-  "bugs": "https://github.com/meersajidh/mogget/issues",
+  "bugs": "https://github.com/meersajidh/cheshire/issues",
   "keywords": [
-    "mogget",
+    "cheshire",
     "desktop",
     "framework"
   ],

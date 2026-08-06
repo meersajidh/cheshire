@@ -5,7 +5,7 @@ import { ScaffoldError } from './scaffold.js'
 /**
  * Point a generated application at packed tarballs instead of the registry.
  *
- * This exists for one reason: the proof gate. mogget's own rule is that a real
+ * This exists for one reason: the proof gate. cheshire's own rule is that a real
  * install is the only proof, and before a release there is nothing published to
  * install *from* — so the gate packs tarballs and generates against those. It
  * is the same install path a developer gets, with a different source.
@@ -18,7 +18,7 @@ export function useLocalTarballs(targetDir: string, tarballDir: string): void {
   const tarballs = collect(dir)
 
   if (tarballs.size === 0) {
-    throw new ScaffoldError(`create-mogget: no .tgz files in ${dir}.`)
+    throw new ScaffoldError(`create-cheshire: no .tgz files in ${dir}.`)
   }
 
   rewriteDependencies(targetDir, tarballs)
@@ -26,8 +26,13 @@ export function useLocalTarballs(targetDir: string, tarballDir: string): void {
 }
 
 /**
- * Map packed files back to package names. `pnpm pack` drops the scope, so
- * `mogget-core-0.0.0.tgz` is `@mogget/core` and `mogget-0.0.0.tgz` is `mogget`.
+ * Map packed files back to package names. `pnpm pack` flattens the scope into the
+ * filename, so `cheshire-core-0.1.0.tgz` is `@cheshire/core` and
+ * `cheshire-app-0.1.0.tgz` is `@cheshire/app`.
+ *
+ * Every framework package is scoped, which is what keeps this a single rule. A
+ * bare package name would collide with the scope's own prefix and need a special
+ * case here — and that is the smaller half of why there is no bare package.
  */
 function collect(dir: string): Map<string, string> {
   const tarballs = new Map<string, string>()
@@ -37,13 +42,12 @@ function collect(dir: string): Map<string, string> {
 
     const stem = file.replace(/-\d+\.\d+\.\d+.*\.tgz$/, '')
 
-    // Only the framework's own packages. A `create-mogget` tarball sits in the
+    // Only the framework's own packages. A `create-cheshire` tarball sits in the
     // same directory during a proof gate and is not a dependency of anything
-    // generated.
-    if (stem !== 'mogget' && !stem.startsWith('mogget-')) continue
+    // generated — and it does not carry the scope prefix, so it drops out here.
+    if (!stem.startsWith('cheshire-')) continue
 
-    const name = stem === 'mogget' ? 'mogget' : `@mogget/${stem.slice('mogget-'.length)}`
-    tarballs.set(name, join(dir, file))
+    tarballs.set(`@cheshire/${stem.slice('cheshire-'.length)}`, join(dir, file))
   }
 
   return tarballs
@@ -64,8 +68,8 @@ function rewriteDependencies(targetDir: string, tarballs: Map<string, string>): 
 
 /**
  * The framework's own cross-references need redirecting too. `pnpm pack`
- * substitutes a version for `workspace:*`, so a packed `mogget` asks for
- * `@mogget/core@0.0.0` — a version no registry has.
+ * substitutes a version for `workspace:*`, so a packed `cheshire` asks for
+ * `@cheshire/core@0.0.0` — a version no registry has.
  *
  * The comment line below is a marker: `scripts/pack-local.mjs --refresh`
  * replaces everything from it onward when it repoints an existing application.
@@ -74,7 +78,7 @@ function rewriteDependencies(targetDir: string, tarballs: Map<string, string>): 
 function addOverrides(targetDir: string, tarballs: Map<string, string>): void {
   const workspacePath = join(targetDir, 'pnpm-workspace.yaml')
   if (!existsSync(workspacePath)) {
-    throw new ScaffoldError(`create-mogget: expected a pnpm-workspace.yaml in ${targetDir}.`)
+    throw new ScaffoldError(`create-cheshire: expected a pnpm-workspace.yaml in ${targetDir}.`)
   }
 
   const entries = [...tarballs]

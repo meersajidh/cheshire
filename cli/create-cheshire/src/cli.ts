@@ -10,10 +10,10 @@ import { scaffold, ScaffoldError } from './scaffold.js'
 import type { Versions } from './scaffold.js'
 
 const USAGE = `
-  create-mogget — generate a desktop application
+  create-cheshire — generate a desktop application
 
   Usage
-    pnpm create mogget <name>
+    pnpm create cheshire <name>
 
   Requires pnpm — a generated application declares \`nodeLinker: hoisted\`,
   which npm and yarn have no equivalent for and electron-builder needs.
@@ -79,7 +79,7 @@ function parse(argv: string[]): Options {
 
     if (argument === '--from-tarballs') {
       const value = argv[index + 1]
-      if (!value) throw new ScaffoldError('create-mogget: --from-tarballs needs a directory.')
+      if (!value) throw new ScaffoldError('create-cheshire: --from-tarballs needs a directory.')
       options.fromTarballs = value
       index += 1
     } else if (argument === '--no-install') {
@@ -87,7 +87,7 @@ function parse(argv: string[]): Options {
     } else if (argument === '--no-git') {
       options.git = false
     } else if (argument.startsWith('-')) {
-      throw new ScaffoldError(`create-mogget: unknown option \`${argument}\`.\n${USAGE}`)
+      throw new ScaffoldError(`create-cheshire: unknown option \`${argument}\`.\n${USAGE}`)
     } else {
       options.name ??= argument
     }
@@ -111,7 +111,7 @@ function templateDir(): string {
 
 /**
  * The framework version a generated application declares is this generator's own
- * version: `create-mogget` and the packages it generates against are released
+ * version: `create-cheshire` and the packages it generates against are released
  * together, so they cannot disagree.
  *
  * Caret, not exact. Below 1.0 a caret range admits patches and nothing else, so a
@@ -126,7 +126,7 @@ function versions(): Versions {
   ) as { version: string }
 
   return {
-    mogget: `^${manifest.version}`,
+    cheshire: `^${manifest.version}`,
     react: REACT_VERSION,
     reactTypes: REACT_TYPES_VERSION,
     pnpm: PNPM_VERSION,
@@ -136,13 +136,13 @@ function versions(): Versions {
 function init(targetDir: string): void {
   const result = spawnSync('git', ['init', '--quiet'], { cwd: targetDir, stdio: 'inherit' })
   // A missing git is not a reason to fail a generated application.
-  if (result.error) console.warn('create-mogget: skipped `git init` — git is not available.')
+  if (result.error) console.warn('create-cheshire: skipped `git init` — git is not available.')
 }
 
 /**
  * Install with pnpm — always, and never with whatever invoked `create`.
  *
- * A mogget application is pnpm-shaped by construction, in two ways that have no
+ * A cheshire application is pnpm-shaped by construction, in two ways that have no
  * equivalent anywhere else:
  *
  * - `pnpm-workspace.yaml` carries `nodeLinker: hoisted`, which exists because
@@ -151,10 +151,10 @@ function init(targetDir: string): void {
  *   on launch. npm and yarn have no such setting to honour.
  * - Generated with `--from-tarballs`, the `overrides:` block that resolves the
  *   framework's own cross-references lives in that same file. Nothing else
- *   reads it, so every `@mogget/*` request goes to a registry that has no such
+ *   reads it, so every `@cheshire/*` request goes to a registry that has no such
  *   version.
  *
- * Detecting the caller's package manager was therefore offering a choice mogget
+ * Detecting the caller's package manager was therefore offering a choice cheshire
  * cannot honour: npm "succeeds" while silently ignoring the linker, and the
  * failure surfaces much later, at packaging, on Windows. Being explicit costs a
  * developer one `npm i -g pnpm`; the alternative costs them a debugging session
@@ -163,7 +163,7 @@ function init(targetDir: string): void {
 function install(targetDir: string): void {
   if (!hasPnpm()) {
     throw new ScaffoldError(
-      'create-mogget: mogget applications require pnpm.\n' +
+      'create-cheshire: cheshire applications require pnpm.\n' +
         '  `nodeLinker: hoisted` has no npm or yarn equivalent, and electron-builder\n' +
         '  needs it to package correctly on Windows.\n\n' +
         '    install it:  npm i -g pnpm\n' +
@@ -184,7 +184,7 @@ function install(targetDir: string): void {
   })
   if (result.status !== 0) {
     throw new ScaffoldError(
-      `create-mogget: \`pnpm install\` failed. The application is generated — run it again in ${basename(targetDir)}.`,
+      `create-cheshire: \`pnpm install\` failed. The application is generated — run it again in ${basename(targetDir)}.`,
     )
   }
 }

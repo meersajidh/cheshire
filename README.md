@@ -1,9 +1,9 @@
-# mogget
+# cheshire
 
 A platform for building desktop applications.
 
 ```bash
-pnpm create mogget my-app     # requires pnpm — see docs/design-and-roadmap.md §5
+pnpm create cheshire my-app     # requires pnpm — see docs/design-and-roadmap.md §5
 cd my-app
 pnpm dev
 ```
@@ -14,14 +14,15 @@ never thinks about the runtime. Electron is the first runtime, and an implementa
 ## This repository
 
 This is the **framework** product — packages, template, and CLIs. A generated application is
-its customer and lives in its own repository, depending on released `@mogget/*` packages,
+its customer and lives in its own repository, depending on released `@cheshire/*` packages,
 never on framework source.
 
 ```
-packages/    @mogget/* — core, react, ui, shell, layout, commands, customization,
+packages/    @cheshire/* — core, react, ui, shell, layout, commands, customization,
              storage, identity, devtools, runtime, host
-templates/   opinionated blueprints — a configuration of mogget's systems (workbench)
-cli/         create-mogget (project generation) + mogget (dev, build, package)
+templates/   opinionated blueprints — a configuration of cheshire's systems (workbench)
+cli/         create-cheshire (project generation) + @cheshire/app (dev, build,
+             package — and the only package an application imports from)
 docs/        premises and architecture
 ```
 
@@ -31,7 +32,7 @@ docs/        premises and architecture
 - [docs/design-and-roadmap.md](docs/design-and-roadmap.md) — structure, packages, CLIs,
   development flow, roadmap.
 - [docs/application-surface.md](docs/application-surface.md) — how an application layers on
-  mogget: the Shell and Host surfaces, every contribution kind, the platform systems.
+  cheshire: the Shell and Host surfaces, every contribution kind, the platform systems.
 - [docs/guides/](docs/guides/) — onboarding: framework architecture, codebase tour.
 
 ## Development
@@ -41,11 +42,13 @@ pnpm install
 pnpm check     # lint + build + typecheck + test
 ```
 
-Consumers install mogget from a packed tarball or a local registry — never a workspace link.
-A link resolves source paths and hides exactly the packaging failures that break a real
-install, so the tarball loop is the only proof that anything works.
+Consumers install cheshire from npm, a packed tarball, or a local registry — never a workspace
+link. A link resolves source paths and hides exactly the packaging failures that break a real
+install, so a real install is the only proof that anything works.
 
 ## Status
 
 Milestone A, stage 1 — an application contributes a view and the shell renders it.
 Stage 2 (commands & menus) is next. See §13 of the design & roadmap doc.
+
+Published at `0.1.0`. Pre-1.0 and moving: the surface will change before it settles.

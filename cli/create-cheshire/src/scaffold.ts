@@ -8,12 +8,12 @@ export class ScaffoldError extends Error {
 }
 
 /**
- * The version set a generated application starts on. `create-mogget` ships a
+ * The version set a generated application starts on. `create-cheshire` ships a
  * matrix it was tested against rather than a range each install re-resolves —
  * an application never starts life on a combination nobody has run.
  */
 export interface Versions {
-  mogget: string
+  cheshire: string
   react: string
   reactTypes: string
   /** Pinned into the generated `packageManager` field, so corepack agrees with us. */
@@ -38,12 +38,12 @@ export function scaffold(
 ): void {
   if (existsSync(targetDir) && readdirSync(targetDir).length > 0) {
     throw new ScaffoldError(
-      `create-mogget: ${targetDir} already exists and is not empty.\n` +
+      `create-cheshire: ${targetDir} already exists and is not empty.\n` +
         'Choose another name, or remove the directory first.',
     )
   }
   if (!existsSync(templateDir)) {
-    throw new ScaffoldError(`create-mogget: the template is missing from this install (${templateDir}).`)
+    throw new ScaffoldError(`create-cheshire: the template is missing from this install (${templateDir}).`)
   }
 
   mkdirSync(targetDir, { recursive: true })
@@ -56,7 +56,7 @@ export function scaffold(
     name: identity.name,
     appId: identity.appId,
     productName: identity.productName,
-    moggetVersion: versions.mogget,
+    cheshireVersion: versions.cheshire,
     reactVersion: versions.react,
     reactTypesVersion: versions.reactTypes,
     pnpmVersion: versions.pnpm,
@@ -79,7 +79,7 @@ function substitute(dir: string, tokens: Record<string, string>): void {
       const value = tokens[token]
       if (value === undefined) {
         throw new ScaffoldError(
-          `create-mogget: the template uses an unknown placeholder \`${match}\` in ${entry}.`,
+          `create-cheshire: the template uses an unknown placeholder \`${match}\` in ${entry}.`,
         )
       }
       return value
