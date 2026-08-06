@@ -7,23 +7,8 @@ import { basename, relative, resolve } from 'node:path'
 import { deriveIdentity, InvalidNameError } from './identity.js'
 import { useLocalTarballs } from './local-tarballs.js'
 import { scaffold, ScaffoldError } from './scaffold.js'
+import { parse, USAGE } from './options.js'
 import type { Versions } from './scaffold.js'
-
-const USAGE = `
-  create-cheshire — generate a desktop application
-
-  Usage
-    pnpm create cheshire <name>
-
-  Requires pnpm — a generated application declares \`nodeLinker: hoisted\`,
-  which npm and yarn have no equivalent for and electron-builder needs.
-
-  Options
-    --from-tarballs <dir>   Install the framework from packed tarballs (proof gate)
-    --no-install            Skip installing dependencies
-    --no-git                Skip \`git init\`
-    -h, --help              Show this message
-`
 
 /**
  * The React the template is generated against — a version that has actually been
@@ -55,45 +40,13 @@ async function main(argv: string[]): Promise<void> {
   if (options.fromTarballs) useLocalTarballs(targetDir, options.fromTarballs)
 
   if (options.git) init(targetDir)
-  if (options.install) install(targetDir)
+  if (options.install) install(targetDir, options.registry)
 
   const where = relative(process.cwd(), targetDir) || '.'
   console.log(`\n  ${identity.productName} is ready in ${where}\n`)
   console.log(`    cd ${where}`)
   if (!options.install) console.log('    pnpm install')
   console.log('    pnpm dev\n')
-}
-
-interface Options {
-  name?: string
-  fromTarballs?: string
-  install: boolean
-  git: boolean
-}
-
-function parse(argv: string[]): Options {
-  const options: Options = { install: true, git: true }
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const argument = argv[index] as string
-
-    if (argument === '--from-tarballs') {
-      const value = argv[index + 1]
-      if (!value) throw new ScaffoldError('create-cheshire: --from-tarballs needs a directory.')
-      options.fromTarballs = value
-      index += 1
-    } else if (argument === '--no-install') {
-      options.install = false
-    } else if (argument === '--no-git') {
-      options.git = false
-    } else if (argument.startsWith('-')) {
-      throw new ScaffoldError(`create-cheshire: unknown option \`${argument}\`.\n${USAGE}`)
-    } else {
-      options.name ??= argument
-    }
-  }
-
-  return options
 }
 
 async function ask(): Promise<string> {
@@ -115,8 +68,8 @@ function templateDir(): string {
  * together, so they cannot disagree.
  *
  * Caret, not exact. Below 1.0 a caret range admits patches and nothing else, so a
- * generated application collects `0.1.1` without ever crossing a minor — where the
- * breaking changes live while the surface is still moving. An exact pin would
+ * generated application collects the next patch without ever crossing a minor —
+ * which is where the breaking changes live while the surface moves. An exact pin would
  * strand every application generated today on the version that shipped today.
  * `--from-tarballs` overwrites these specifiers wholesale, so it is unaffected.
  */
@@ -160,7 +113,7 @@ function init(targetDir: string): void {
  * developer one `npm i -g pnpm`; the alternative costs them a debugging session
  * with no clue pointing here.
  */
-function install(targetDir: string): void {
+function install(targetDir: string, registry?: string): void {
   if (!hasPnpm()) {
     throw new ScaffoldError(
       'create-cheshire: cheshire applications require pnpm.\n' +
@@ -174,7 +127,13 @@ function install(targetDir: string): void {
 
   console.log('\n  installing dependencies with pnpm…\n')
 
-  const result = spawnSync('pnpm', ['install'], {
+  // The install is a separate process, so a registry chosen for *this* command
+  // does not reach it on its own. Without forwarding, `--registry` would fetch
+  // the generator from one registry and the framework from another — and when
+  // both hold the same version, that resolves cleanly and proves nothing.
+  const args = registry ? ['install', '--registry', registry] : ['install']
+
+  const result = spawnSync('pnpm', args, {
     cwd: targetDir,
     stdio: 'inherit',
     // `shell` only on Windows, where package managers are `.cmd` shims that

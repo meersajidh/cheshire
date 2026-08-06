@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Pack every framework package into `.local/tarballs`, at a version nobody has
- * seen before.
+ * Pack every framework package into the local tarball directory, at a version
+ * nobody has seen before.
  *
  * The problem this exists to remove: while every package sat at `0.0.0`, a
  * repack was **invisible** to a consumer. The consumer's lockfile pinned the old
@@ -23,11 +23,31 @@
  */
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const TARBALL_DIR = join(ROOT, '.local', 'tarballs')
+
+/**
+ * Outside the repository, on purpose, and overridable with `CHESHIRE_TARBALL_DIR`.
+ *
+ * Two reasons it does not live in `.local/`:
+ *
+ * 1. A consumer generated inside the framework repository is not an independent
+ *    consumer. `.local/gate/demo` inherited the framework's own
+ *    `allowBuilds: { electron: true }` and passed every gate while the template
+ *    shipped no allowlist at all — the first application generated outside the
+ *    repository installed cleanly and had no Electron binary to launch. Proximity
+ *    hides packaging defects the same way a workspace link does.
+ * 2. The path is written verbatim into consumers' `file:` specifiers, so it must
+ *    survive the repository being renamed or moved.
+ *
+ * `share`, not `cache`: a cache cleaner would break every consumer pointing here.
+ */
+const TARBALL_DIR =
+  process.env.CHESHIRE_TARBALL_DIR ??
+  join(process.env.XDG_DATA_HOME ?? join(homedir(), '.local', 'share'), 'cheshire', 'tarballs')
 
 /** Packed in this order; it is also dependency order, which keeps output readable. */
 const PACKAGES = [
@@ -89,8 +109,10 @@ function main(argv) {
   for (const file of packed.sort()) console.log(`    ${file}`)
 
   if (options.refresh.length === 0) {
-    console.log(`\n  consumers: pnpm exec create-cheshire <name> --from-tarballs ${TARBALL_DIR}`)
-    console.log(`  existing:  node scripts/pack-local.mjs --refresh <dir>\n`)
+    // Generate outside this repository. A consumer created inside it inherits
+    // settings it is supposed to be proving it does not need.
+    console.log(`\n  new consumer:  pnpm create cheshire <name> --from-tarballs ${TARBALL_DIR}`)
+    console.log(`  existing:      node scripts/pack-local.mjs --refresh <dir>\n`)
     return
   }
 

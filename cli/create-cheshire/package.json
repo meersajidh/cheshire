@@ -1,6 +1,6 @@
 {
   "name": "create-cheshire",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "Generate a cheshire desktop application",
   "license": "MIT",
