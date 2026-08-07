@@ -6,11 +6,11 @@
 >
 > This document settles the **layering** — the two surfaces, and which side of the line each
 > concern falls on. It does **not** settle the API shape of anything unbuilt; that is decided at
-> the stage that builds it, against a running thing (premise 8). Where a genuinely hard-to-reverse
+> the stage that builds it, against a running thing (principle 6). Where a genuinely hard-to-reverse
 > choice is visible from here, it is listed in §7 as a decision point rather than quietly assumed
-> (premise 7).
+> (principle 6).
 >
-> Upstream of this document: [premises](premises.md), then
+> Upstream of this document: [principles](principles.md), then
 > [design & roadmap](design-and-roadmap.md). A conflict resolves in their favour.
 
 ---
@@ -29,7 +29,7 @@
 └──────────────────────────────────────────────────────────┘
 ```
 
-Two products, two repositories (premise 2). The application depends on released `@cheshire/*`
+Two products, two repositories (principle 5). The application depends on released `@cheshire/*`
 packages and never on framework source. cheshire supplies every layer below the domain, including
 the ones the application would otherwise have to assemble: the process model, the build, the
 shell, and the services.
@@ -50,7 +50,7 @@ The application's job at every one of them is to *declare*, and the system's job
 | **devtools system** | diagnostics · developer tooling | nothing | logging, crash capture, the viewer — plus dev-only tooling that never reaches a packaged build |
 
 Read the right-hand column as the list of things an application would otherwise be writing. That
-it is not writing them is the whole promise (premise 1), and it is why a contribution is a
+it is not writing them is the whole promise (principle 1), and it is why a contribution is a
 **value** rather than a call: values can be validated, rendered, indexed into a palette, and
 persisted against — a call can only be made.
 
@@ -79,7 +79,7 @@ default.**
 
 ### The application is a customer, not a plugin
 
-This is the single most consequential thing about the layering, and premise 6 states it: **there
+This is the single most consequential thing about the layering, and principle 3 states it: **there
 is no third-party plugin system.** An application contributing views, commands and menus is the
 platform's ordinary surface.
 
@@ -142,7 +142,7 @@ renderer. §3.
 privileged, framework-owned, and holds the window and the OS; putting domain code there makes the
 framework's most trusted process exactly as trustworthy as the application in it.
 
-**Neither surface names the runtime** (premise 5). No Electron module, no IPC channel, no protocol
+**Neither surface names the runtime** (principle 4). No Electron module, no IPC channel, no protocol
 scheme, no `window.cheshire`. The preload bridge is a *membrane* — a place messages pass through,
 never a place logic lives — and it is framework-private in both directions.
 
@@ -265,13 +265,13 @@ messages travel between the application's two halves without passing through mai
 
 The application never names the transport. It writes a call and gets a result; whether that is a
 `MessagePort`, a socket, or something a Tauri backend provides is cheshire's business and changes at
-phase 4 without the application noticing. This is premise 5 applied to the backend rather than to
+phase 4 without the application noticing. This is principle 4 applied to the backend rather than to
 the window.
 
 Two consequences worth stating plainly:
 
 - **Main no longer sees application calls.** It observes the resource access the host performs,
-  not the intent behind it. Under premise 6 — everything is first-party — this is not a security
+  not the intent behind it. Under principle 3 — everything is first-party — this is not a security
   hole, but it is an auditing question that phase 3 has to answer deliberately.
 - **Two channels will exist**: the application's own, and cheshire's framework-private bridge. Their
   boundary has to stay legible, or an application author reaches for the wrong one. cheshire's is not
@@ -355,7 +355,7 @@ a layout that survives a restart.
 
 ## 7. Open decision points
 
-Surfaced, not decided (premise 7). Each is hard to reverse and belongs to the stage that builds it.
+Surfaced, not decided (principle 6). Each is hard to reverse and belongs to the stage that builds it.
 
 > Two earlier items on this list are now settled by the template decision in
 > [design & roadmap](design-and-roadmap.md) §5: a template is a **configuration of cheshire's

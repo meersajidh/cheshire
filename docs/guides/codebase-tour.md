@@ -30,7 +30,7 @@ Two commands before you start:
 
 ```bash
 pnpm install
-pnpm check        # lint + 5 builds + 5 typechecks + 28 tests — the whole gate
+pnpm check        # lint + 5 builds + 5 typechecks + 29 tests — the whole gate
 ```
 
 `pnpm check` is the gate. If it is green, the framework compiles and its unit tests pass. It does
@@ -361,8 +361,9 @@ there, one of the two defences above has broken.
   `productName`. The guesses land in `cheshire.config.ts` as ordinary editable values, rather than
   behind prompts nobody wants to answer before seeing the app run once.
 - **`scaffold.ts:31`** — copies the template, restores `.gitignore`, and substitutes `{{tokens}}`.
-- **`local-tarballs.ts:16`** — `--from-tarballs`, for the proof gate.
-- **`cli.ts`** — argument parsing, `git init`, and the dependency install.
+- **`options.ts:31`** — argument parsing, kept out of `cli.ts` so it can be unit-tested.
+- **`cli.ts`** — the entry: `git init`, the dependency install, and the versions a generated
+  application declares.
 
 Two details there are non-obvious and both bite silently:
 
@@ -374,11 +375,10 @@ this, every generated repository commits `node_modules`.
 reviewed on its own, and `cli/create-cheshire/scripts/copy-template.mjs` copies it into
 `dist/template` at build time — a published generator has no repository to read from.
 
-`useLocalTarballs()` exists for one reason: before a release there is nothing published to install
-from, so the gate packs tarballs and generates against those. It rewrites the app's
-devDependencies to `file:` specifiers, and appends `overrides:` to the app's `pnpm-workspace.yaml`
-— because `pnpm pack` substitutes a version for `workspace:*`, so a packed `@cheshire/app` asks for
-`@cheshire/core@0.0.0`, which no registry has. It changes nothing else about the generated app.
+**`--registry` is forwarded to the install.** The `pnpm install` a generated application gets is
+a separate process, so a registry chosen for `create-cheshire` does not reach it on its own
+(`cli.ts:134`). Without forwarding, the generator would come from one registry and the framework
+from another — and when both hold the same version, that resolves cleanly and proves nothing.
 
 ---
 
@@ -386,7 +386,7 @@ devDependencies to `file:` specifiers, and appends `overrides:` to the app's `pn
 
 **This is the part of the process most likely to feel like overhead and most likely to save you.**
 
-The rule ([premise 4](../premises.md)): _never trust a workspace link_. Links resolve source
+The rule: _never trust a workspace link_. Links resolve source
 paths, so a package whose `exports` point at a `.ts` file — or one that ships with no type
 declarations at all — works perfectly through a link and fails on every real install.
 
@@ -395,36 +395,26 @@ independent consumer. `.local/gate/demo` used to live here and inherited the fra
 `allowBuilds: { electron: true }`; the template shipped no allowlist at all, and every gate passed
 anyway. The first application generated outside the repository installed cleanly and then had no
 Electron binary to launch, because pnpm 10+ silently skips a dependency's install scripts unless
-they are named. So the gate lives outside, and tarballs are packed outside
-(`~/.local/share/cheshire/tarballs`, or `CHESHIRE_TARBALL_DIR`).
+they are named. So the gate lives outside this repository — the playground is at
+`~/Repos/msh/play-cheshire/`, and every generated application lives under it.
 
-Run it:
-
-```bash
-# 1. build and pack every package, outside this repository
-pnpm pack:local
-
-# 2. generate, install, and run for real — from a directory that is NOT this repo
-cd ~/Repos/msh/play-cheshire
-pnpm create cheshire demo --from-tarballs ~/.local/share/cheshire/tarballs
-cd demo && pnpm dev && pnpm build && pnpm package --dir
-```
-
-A local registry is the other half of this, and proves what a tarball cannot — that a scope is
-readable, that `pnpm create cheshire` resolves `create-cheshire` by name, that a transitive
-dependency is reachable:
+**The local registry is the whole loop.** There is one way to get cheshire into a consumer, and
+it is the way a real developer gets it. (This is the *development* publish; the release publish
+to npmjs.org is a different thing with different rules — design & roadmap §11 has both.) A registry also proves what nothing else does: that a
+scope is readable, that `pnpm create cheshire` resolves `create-cheshire` by name, that a
+transitive dependency is reachable.
 
 ```bash
 pnpm registry:start                   # verdaccio on :4873, in another terminal
-pnpm registry:publish                 # build, then publish all five
+pnpm registry:publish                 # build, stamp, publish all five
 
 cd ~/Repos/msh/play-cheshire          # anywhere outside this repository
 PNPM_CONFIG_REGISTRY=http://localhost:4873 pnpm create cheshire demo
 cd demo && pnpm dev
 ```
 
-Unlike npm, the same version can be republished as often as you like, so iterating costs no
-permanent version numbers.
+Unlike npm, a version here costs nothing and is never permanent, so iterating burns no released
+version numbers. It is *not* the same version each time — see the refresh loop below.
 
 **Use `PNPM_CONFIG_REGISTRY`, not `npm_config_registry`.** pnpm 11 moved to its own
 `~/.config/pnpm/config.yaml` and does not read `npm_config_*` at all — those are silently
@@ -445,34 +435,54 @@ published is seconds old. Add the scope to `minimumReleaseAgeExclude`.
 **A generated application is pnpm-only, and `create-cheshire` enforces it** — it runs `pnpm install`
 whatever invoked it, and refuses with a message naming the fix if pnpm is absent. Two things make
 that non-negotiable: `pnpm-workspace.yaml` carries `nodeLinker: hoisted`, which npm and yarn have
-no equivalent for and electron-builder needs on Windows; and in tarball mode the `overrides:` block
-that resolves every `@cheshire/*` request lives in that same file, which nothing else reads. Detecting
-the caller's package manager used to be the behaviour, and it offered a choice cheshire cannot honour:
-npm 404s in tarball mode, and "succeeds" in registry mode while silently ignoring the linker.
+no equivalent for and electron-builder needs on Windows, and detecting the caller's package
+manager offered a choice cheshire cannot honour — npm "succeeds" while silently ignoring the
+linker, and the failure surfaces much later, at packaging, on Windows.
 
-After that, the loop while you work on the framework is one command plus one install:
+After that, the loop while you work on the framework is one command on each side:
 
 ```bash
-pnpm pack:local --refresh <consumer>   # build → pack → repoint
-(cd <consumer> && pnpm install)
+pnpm registry:publish                                    # build → stamp → publish
+(cd <consumer> && pnpm update --latest "@cheshire/*")
 ```
 
-`<consumer>` is any generated application outside this repository — the playground lives at
-`~/Repos/msh/play-cheshire/`, but nothing about the loop depends on that path.
+`<consumer>` is any generated application under `~/Repos/msh/play-cheshire/`.
 
-`scripts/pack-local.mjs` stamps a **unique version per pack** (`0.0.0-dev.<timestamp>`), which is
-the whole reason that install is enough. While every package sat at `0.0.0`, a repack was
-_invisible_: the consumer's lockfile pinned the old tarball's integrity and pnpm reinstalled that
-copy from the store, `--force` included, so the only way through was wiping `node_modules` **and**
-the lockfile. A stamped version puts the version in the filename too, so the `file:` specifier
-changes and there is nothing stale left to resolve to. `--refresh` rewrites those specifiers, and
-the `overrides:` block, in a consumer that already exists.
+**`--latest` is not optional, and the reason is a trap worth knowing.** A plain `pnpm update`
+resolves the caret range correctly — and then rewrites the specifier as an exact pin:
+
+```
+before:  "@cheshire/app": "^0.1.3-dev.20260807182514"
+after:   "@cheshire/app": "0.1.3-dev.20260807183922"
+```
+
+So it refreshes once and is a silent no-op every time after, because an exact range has nothing
+to resolve to. The symptom is a framework change that stops arriving with no error anywhere,
+which reads exactly like a caching bug and is not one. `--latest` ignores the declared range and
+follows the `latest` dist-tag, which every `registry:publish` moves.
+
+**`registry:publish` stamps a new version every time** (`<next patch>-dev.<timestamp>`,
+`registry-local.mjs:stamp`), and that is the whole reason `pnpm update` is enough. Republishing
+one version is not an option on either side of the wire:
+
+- **Verdaccio** rejects it with `EPUBLISHCONFLICT` and has no config to relax that. Worse, it
+  updates the shasum in `_attachments` *while* rejecting, leaving storage inconsistent enough to
+  fail a later clean install ([verdaccio#874](https://github.com/verdaccio/verdaccio/issues/874)).
+- **pnpm 10.34** made a tarball-integrity mismatch against the lockfile a hard failure, closing a
+  path where a republished version could substitute content. `--force` and `pnpm update` both
+  deliberately refuse to bypass it. Only `--update-checksums` does, and that is a supply-chain
+  guard, not a dev loop.
+
+A new version sidesteps all of it: no conflict to force, correct integrity, and the consumer's
+caret range resolves it. The range works because `create-cheshire` stamps `^<its own version>`
+into the generated app (`cli.ts:76`), so a generator installed from the local registry writes a
+prerelease range that every later dev publish satisfies.
 
 The trap the stamping does _not_ remove:
 
 **Framework source is never in a consumer's dev module graph.** After editing framework code you
-must pack again. Skip it and your change simply does not appear, with nothing said about why —
-which is exactly why the script builds before it packs rather than trusting `dist/`.
+must publish again. Skip it and your change simply does not appear, with nothing said about why —
+which is exactly why the script builds before it publishes rather than trusting `dist/`.
 
 The working consumers live outside this repository — a gate directory alongside it, and
 `play-cheshire` for anything longer-lived. Nothing inside `.local/` is a consumer any more.
@@ -518,7 +528,7 @@ Small experiments, roughly in order of how much they teach:
    `.cheshire/` entirely and run `pnpm dev` — it comes straight back.
 4. **Change the config.** Set `window.width` in `cheshire.config.ts` and restart. Follow the value
    from the file through `loadApp` to `createWindow`.
-5. **Look inside a package.** `tar tzf ~/.local/share/cheshire/tarballs/cheshire-shell-*.tgz` — `dist/lib` and
-   `dist/types`, and no source. If `dist/types` were ever missing, an app would install with no
-   type declarations and every import would be `any`. That has happened once.
+5. **Look inside a package.** `tar tzf $(pnpm pack --pack-destination /tmp packages/shell)` —
+   `dist/lib` and `dist/types`, and no source. If `dist/types` were ever missing, an app would
+   install with no type declarations and every import would be `any`. That has happened once.
 6. **Inspect an asar.** As in Part 3. Watch for anything that is not the two built trees.

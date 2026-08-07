@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { createInterface } from 'node:readline/promises'
 import { fileURLToPath } from 'node:url'
-import { basename, relative, resolve } from 'node:path'
+import { basename, join, relative, resolve } from 'node:path'
 import { deriveIdentity, InvalidNameError } from './identity.js'
-import { useLocalTarballs } from './local-tarballs.js'
 import { scaffold, ScaffoldError } from './scaffold.js'
 import { parse, USAGE } from './options.js'
 import type { Versions } from './scaffold.js'
@@ -37,7 +36,7 @@ async function main(argv: string[]): Promise<void> {
   const targetDir = resolve(process.cwd(), identity.name)
 
   scaffold(templateDir(), targetDir, identity, versions())
-  if (options.fromTarballs) useLocalTarballs(targetDir, options.fromTarballs)
+  if (options.registry) pinRegistry(targetDir, options.registry)
 
   if (options.git) init(targetDir)
   if (options.install) install(targetDir, options.registry)
@@ -71,7 +70,12 @@ function templateDir(): string {
  * generated application collects the next patch without ever crossing a minor —
  * which is where the breaking changes live while the surface moves. An exact pin would
  * strand every application generated today on the version that shipped today.
- * `--from-tarballs` overwrites these specifiers wholesale, so it is unaffected.
+ *
+ * It is also what makes the local-registry loop work. `registry:publish` stamps
+ * `<next patch>-dev.<timestamp>`, so a generator installed from that registry
+ * writes `^<that version>` here — and every later dev publish is a higher
+ * prerelease of the same patch, which this range admits. The consumer refreshes
+ * with `pnpm update` and nothing rewrites its manifest.
  */
 function versions(): Versions {
   const manifest = JSON.parse(
@@ -84,6 +88,22 @@ function versions(): Versions {
     reactTypes: REACT_TYPES_VERSION,
     pnpm: PNPM_VERSION,
   }
+}
+
+/**
+ * Write the chosen registry into the generated application's `.npmrc`.
+ *
+ * `--registry` reaches the install this command spawns, and nothing after it.
+ * Without this the *next* command a developer runs in the application — `pnpm
+ * update`, `pnpm add`, `pnpm install` after a git clone — silently goes to
+ * npmjs.org and fails on framework versions that only exist locally, with an
+ * error naming npmjs.org and no hint that the registry was ever the question.
+ *
+ * A file in the application is also the honest place for it: the registry a
+ * project resolves from is the project's property, not one invocation's.
+ */
+function pinRegistry(targetDir: string, registry: string): void {
+  writeFileSync(join(targetDir, '.npmrc'), `registry=${registry}\n`, 'utf8')
 }
 
 function init(targetDir: string): void {
@@ -102,11 +122,6 @@ function init(targetDir: string): void {
  *   electron-builder cannot follow pnpm's Windows junctions when it collects
  *   binaries — without it a packaged application ships incomplete and crashes
  *   on launch. npm and yarn have no such setting to honour.
- * - Generated with `--from-tarballs`, the `overrides:` block that resolves the
- *   framework's own cross-references lives in that same file. Nothing else
- *   reads it, so every `@cheshire/*` request goes to a registry that has no such
- *   version.
- *
  * Detecting the caller's package manager was therefore offering a choice cheshire
  * cannot honour: npm "succeeds" while silently ignoring the linker, and the
  * failure surfaces much later, at packaging, on Windows. Being explicit costs a

@@ -19,16 +19,21 @@ describe('parse', () => {
   it('names the missing value rather than swallowing the next argument', () => {
     expect(() => parse(['demo', '--registry'])).toThrow(ScaffoldError)
     expect(() => parse(['demo', '--registry'])).toThrow(/--registry needs a URL/)
-    expect(() => parse(['demo', '--from-tarballs'])).toThrow(/--from-tarballs needs a directory/)
   })
 
   it('does not mistake an option value for the application name', () => {
     expect(parse(['--registry', 'http://localhost:4873', 'demo']).name).toBe('demo')
-    expect(parse(['--from-tarballs', '/tmp/tarballs', 'demo']).name).toBe('demo')
   })
 
   it('rejects an unknown option instead of treating it as a name', () => {
     expect(() => parse(['demo', '--registy', 'http://x'])).toThrow(/unknown option/)
+  })
+
+  // `--from-tarballs` was the pre-registry install path. It is gone, and a stale
+  // invocation must say so rather than generate an application that quietly
+  // installs from npm instead.
+  it('rejects the retired --from-tarballs flag', () => {
+    expect(() => parse(['demo', '--from-tarballs', '/tmp/tarballs'])).toThrow(/unknown option/)
   })
 
   it('turns the skip flags off', () => {

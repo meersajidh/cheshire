@@ -28,7 +28,7 @@ function createWindow(options: RuntimeOptions, config: ResolvedCheshireConfig): 
     webPreferences: {
       // The renderer is web content and is treated as such: no Node, isolated
       // context, sandboxed. Application code never reaches these APIs
-      // (premise 5), so nothing here is a compromise.
+      // (principle 4), so nothing here is a compromise.
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,

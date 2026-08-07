@@ -23,12 +23,12 @@ packages/    @cheshire/* — core, react, ui, shell, layout, commands, customiza
 templates/   opinionated blueprints — a configuration of cheshire's systems (workbench)
 cli/         create-cheshire (project generation) + @cheshire/app (dev, build,
              package — and the only package an application imports from)
-docs/        premises and architecture
+docs/        principles and architecture
 ```
 
 ## Docs
 
-- [docs/premises.md](docs/premises.md) — the 8 founding premises. Upstream of every decision.
+- [docs/principles.md](docs/principles.md) — the 6 founding principles. Upstream of every decision.
 - [docs/design-and-roadmap.md](docs/design-and-roadmap.md) — structure, packages, CLIs,
   development flow, roadmap.
 - [docs/application-surface.md](docs/application-surface.md) — how an application layers on
@@ -42,9 +42,9 @@ pnpm install
 pnpm check     # lint + build + typecheck + test
 ```
 
-Consumers install cheshire from npm, a packed tarball, or a local registry — never a workspace
-link. A link resolves source paths and hides exactly the packaging failures that break a real
-install, so a real install is the only proof that anything works.
+Consumers install cheshire from npm or a local registry — never a workspace link. A link
+resolves source paths and hides exactly the packaging failures that break a real install, so a
+real install is the only proof that anything works.
 
 ## Status
 

@@ -8,14 +8,14 @@
 > **Who it is for.** An engineer comfortable with TypeScript and React who has _used_ Next.js or
 > Vite but never opened one. No Electron background assumed.
 >
-> **What it is not.** Not a decision record — [the premises](../premises.md) hold those, and
+> **What it is not.** Not a decision record — [the principles](../principles.md) hold those, and
 > where this document explains a decision it points at them rather than restating them. Not a
 > roadmap either; [design & roadmap](../design-and-roadmap.md) owns the structure, the package
 > list and the stage plan, and this document assumes it. Not the surface either: what an
 > application eventually contributes, and which system it contributes to, is
 > [the application surface](../application-surface.md).
 >
-> **Reading order.** [premises](../premises.md) → [design & roadmap](../design-and-roadmap.md)
+> **Reading order.** [principles](../principles.md) → [design & roadmap](../design-and-roadmap.md)
 > → [the application surface](../application-surface.md) → this → [the tour](codebase-tour.md).
 >
 > **Status.** Written at the close of stage 0, refreshed at the close of stage 1, and again on
@@ -88,9 +88,10 @@ Two properties are worth naming, because they are the ones that decay quietly if
 **cheshire arrives built.** What an application installs is compiled JavaScript, type declarations
 and a stylesheet — no framework TypeScript source at all. An app's build therefore compiles app
 code only, the same relationship it has with every other dependency
-([premise 4](../premises.md)). The consequence for you, on day one: after editing framework
-source you must **rebuild and repack**, or your change silently does not appear in a consumer,
-with nothing said about why.
+([principle 5](../principles.md)). The consequence for you, on day one: after editing framework
+source you must **rebuild and republish** (`pnpm registry:publish`), then refresh the consumer
+with `pnpm update --latest "@cheshire/*"` — or your change silently does not appear, with nothing
+said about why.
 
 **Generated files live in the application, not the framework.** `.cheshire/` sits in the app's own
 directory and is gitignored — the same convention as `.next/`, `.nuxt/` and `.svelte-kit/`.
@@ -211,7 +212,7 @@ Three properties of that shape are the point of it:
   completion and a type error at the line they wrote, rather than a stack from a generated file.
   What survives it is validated again by `resolveApp`, whose messages name `src/index.ts`.
 - **A view is a React component and nothing else.** No base class, no lifecycle, nothing imported
-  from the runtime. That keeps [premise 5](../premises.md) intact: React is the platform's UI
+  from the runtime. That keeps [principle 4](../principles.md) intact: React is the platform's UI
   language under Electron and would be under Tauri too, so naming it is not naming the runtime.
 
 The contract lives in `@cheshire/core` on a **separate entry**, `@cheshire/core/views`, and re-exports
@@ -282,7 +283,7 @@ bundled and do not need to be. Everything else is concatenated into one file.
 **Therefore a packaged application ships no `node_modules` at all.** The asar contains the main
 bundle, the renderer bundle and a `package.json`: about 396 KB for the stage-1 app. That in turn
 is what lets an application declare `@cheshire/app` as a **devDependency** and never name the runtime,
-which is [premise 5](../premises.md) holding in practice rather than in principle.
+which is [principle 4](../principles.md) holding in practice rather than in principle.
 
 The trap under it: electron-builder collects production dependencies in a pass of its own,
 _outside_ the `files` patterns, and only an explicit `!node_modules/**` stops it. Without both
@@ -299,8 +300,9 @@ two processes in one shipped artifact, and a native binary underneath.
 **Two processes, one program.** The **main** process is Node with the desktop APIs — windows,
 menus, dialogs, the filesystem. The **renderer** is a browser page. cheshire owns both. An app's code
 runs only in the renderer, and never names the runtime: no Electron modules, no IPC channels, no
-process or window APIs ([premise 5](../premises.md)). The runtime *interfaces* that will make
-that portable arrive in phase 4, validated by an actual Tauri port rather than guessed at now.
+process or window APIs ([principle 4](../principles.md)). The runtime *interfaces* that will make
+that portable are designed with the runtime layer, not deferred until a second runtime exists;
+a port is what validates them, and is expected to expose gaps when it happens.
 
 **The renderer is treated as web content, because it is.** `contextIsolation: true`,
 `nodeIntegration: false`, `sandbox: true`, in development and in production alike. Since app code
@@ -327,8 +329,8 @@ installation is unaffected, because the installer's postinstall does SUID it.
 
 **A real install is the only proof.** Workspace links resolve source paths and hide packaging
 failures — an `exports` entry pointing at a `.ts` file works perfectly through a link and fails
-on every real install. So cheshire's playground and every gate consume the framework from a **packed
-tarball**, from the very first run. This is not caution; it is the rule that caught, during stage
+on every real install. So cheshire's playground and every gate consume the framework from a **local
+registry**, from the very first run. This is not caution; it is the rule that caught, during stage
 0, a package that installed with no type declarations at all because one build step emptied the
 directory another had written to.
 
@@ -376,7 +378,7 @@ Consolidation, documentation and refactoring queue _behind_ the next runnable mi
 | **main process** | Electron's Node process. Owns windows and the desktop. Framework-only. |
 | **renderer** | The browser page. Where app UI runs. |
 | **asar** | Electron's archive format for an app's files inside a package. |
-| **the proof gate** | pack tarballs → generate an app → build → run it, on real artifacts. |
+| **the proof gate** | publish to the local registry → generate an app → build → run it, on real artifacts. |
 | **workbench** | The name of a *template* — the VS Code-like blueprint. Not the package that draws it; that is `@cheshire/shell`. |
 
 ---
@@ -385,7 +387,7 @@ Consolidation, documentation and refactoring queue _behind_ the next runnable mi
 
 - **The roadmap, package factoring, and what a template is** —
   [design & roadmap](../design-and-roadmap.md).
-- **What is true at all times** — [premises](../premises.md).
+- **What is true at all times** — [principles](../principles.md).
 - **What the code actually says** — [the codebase tour](codebase-tour.md).
 - **The full contribution surface and the systems behind it** — every contribution kind, the host
   process, and which zone each service sits in —

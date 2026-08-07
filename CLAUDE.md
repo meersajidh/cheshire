@@ -8,8 +8,8 @@ product.
 
 ## Source of truth — read in order, do not duplicate here
 
-1. **`docs/premises.md`** — 8 premises, upstream of every decision. A decision that
-   contradicts one is wrong, or the premise is amended explicitly first.
+1. **`docs/principles.md`** — 6 principles, upstream of every decision. A decision that
+   contradicts one is wrong, or the principle is amended explicitly first.
 2. **`docs/design-and-roadmap.md`** — structure, packages, the two CLIs, development flow,
    roadmap, and Milestone A with its stage slicing (§13). Names live in its appendix.
 3. **`docs/application-surface.md`** — how an application layers on cheshire: the two surfaces
@@ -34,13 +34,12 @@ that name is taken by an unrelated dormant project — so `@cheshire/app` is the
 application imports from, and it installs the `cheshire` command. A bin name lives in the
 application's own `node_modules/.bin` and never touches a registry, which is why every
 user-visible string (`pnpm create cheshire`, `cheshire dev`, `cheshire.config.ts`) survived
-unchanged. Every framework package carrying the scope also removed two bare-name special cases,
-in `create-cheshire`'s tarball mapping and in `pack:local --refresh`.
+unchanged.
 
 **Stage 1 — complete.** An app contributes a view and the shell renders it.
 `src/index.ts` default-exports `defineApp({ views })`, the generated renderer imports it by
 relative path, and the sidebar lists the views while the editor area renders the active one.
-Verified on a freshly generated app installed from tarballs: the view renders in `dev`,
+Verified on a freshly generated app installed for real: the view renders in `dev`,
 editing it updates the window with no restart, and the packaged app renders the same view
 from inside its asar. **Stage 2 (commands & menus: the app's command appears in the menu and
 on a shortcut, and opens the view) is next** — it extends the same `AppDefinition` object;
@@ -50,24 +49,36 @@ It splits into **2a** — frameless window, preload membrane, CSP, window contro
 title bar — and **2b** — commands, keybindings, menu bar. The preload lands in 2a regardless
 of the menu decision, because `frame: false` means cheshire draws the window controls.
 
-**The consumer loop is one command plus one install:**
-`pnpm pack:local --refresh <dir>` builds, packs into `~/.local/share/cheshire/tarballs`
-(override with `CHESHIRE_TARBALL_DIR`) at a unique `0.0.0-dev.<timestamp>`, and rewrites that
-consumer's `file:` specifiers and `overrides:` block; then `pnpm install` in the consumer. No
-wipe. The stamped version is what makes it work — it lands in the tarball *filename*, so the
-specifier changes and pnpm has nothing stale to resolve to. Proven by packing a deliberate
-change and watching it reach a running window without touching `node_modules`. `--refresh` also
-**drops stale `@cheshire/*` specifiers** and warns — it cannot add what a rename removed, so a
-renamed package means regenerating the consumer with `create-cheshire`, not refreshing it.
+**The local registry is the whole consumer loop — there is no second mechanism.** `pack:local`
+and `create-cheshire --from-tarballs` were retired on 2026-08-07; the registry does everything
+they did and proves what they could not — that a scope is readable, that `pnpm create cheshire`
+resolves `create-cheshire` by name, that a transitive dependency is reachable.
+`pnpm registry:start` (Verdaccio on :4873, foreground), `registry:publish`, `registry:status`,
+`registry:reset`. One command each side:
 
-**Consumers live outside this repository**, tarballs included — see the gate invariant below.
-Nothing under `.local/` is a consumer any more.
+```
+pnpm registry:publish          # framework repo: build → stamp → publish all five
+(cd <consumer> && pnpm update --latest "@cheshire/*")
+```
 
-**A local registry proves what tarballs cannot** — that a scope is readable, that
-`pnpm create cheshire` resolves `create-cheshire` by name, that a transitive dependency is
-reachable. `pnpm registry:start` (Verdaccio on :4873, foreground), `registry:publish`,
-`registry:status`, `registry:reset`. It hosts the real names and lets the same version be
-republished endlessly, so iterating costs no permanent npm version.
+**`--latest` is load-bearing.** A plain `pnpm update` resolves the caret correctly and then
+rewrites the specifier as an exact pin, so it works once and is a silent no-op forever after —
+measured, and it cost a debugging session. `--latest` follows the `latest` dist-tag, which every
+publish moves. `create-cheshire --registry` also writes `.npmrc` into the generated app
+(`cli.ts:pinRegistry`); without it every later command in that app resolves from npmjs.org and
+fails naming a version that only exists locally.
+
+**`registry:publish` stamps `<next patch>-dev.<timestamp>` every time, and that is what makes
+`pnpm update` enough.** Republishing one version is impossible on both sides and it was measured,
+not guessed: Verdaccio rejects it with `EPUBLISHCONFLICT`, has no config to relax that, and
+corrupts `_attachments` while rejecting (verdaccio#874); pnpm ≥10.34 makes a lockfile integrity
+mismatch a hard failure that neither `--force` nor `pnpm update` will bypass — only
+`--update-checksums`, which is a supply-chain guard, not a dev loop. A fresh version has no
+conflict, correct integrity, and is admitted by the caret range `create-cheshire` stamps into the
+generated app (`cli.ts:76`), since every dev publish is a higher prerelease of the same patch.
+
+**Consumers live outside this repository**, under `~/Repos/msh/play-cheshire/` — see the gate
+invariant below. Nothing under `.local/` is a consumer any more.
 
 Two rules make a registry test mean anything, both paid for the hard way. **Aim the customer path
 with `PNPM_CONFIG_REGISTRY`, never `npm_config_*`** — pnpm 11 reads its own
@@ -111,8 +122,8 @@ and never implements one. **`workbench` is now a template name only** — the pa
   consumer; an app's build compiles app code only. **Never trust a workspace link** —
   links resolve source paths and hide packaging failures (e.g. `exports` pointing at `.ts`
   under `node_modules` fails on a real install; a link hides it completely). The
-  playground (`play-cheshire`, external repo) and all gates consume cheshire from a packed
-  tarball or local registry.
+  playground (`play-cheshire`, external repo) and all gates consume cheshire from the local
+  registry.
 - **A gate must live outside the framework repository.** `.local/gate/demo` sat *inside* it
   and silently inherited settings it was supposed to be proving it did not need: the
   framework's `allowBuilds: { electron: true }` reached it, the template shipped no such
@@ -120,9 +131,10 @@ and never implements one. **`workbench` is now a template name only** — the pa
   the published 0.1.0 packages — installed cleanly and then had no Electron binary to launch,
   because pnpm 10+ silently skips a dependency's install scripts unless allowlisted. Same
   class of blind spot as a workspace link: proximity, not linkage. Move `.local/gate` out.
-- **Consequence of tarball consumption:** framework `src/` is never in a consumer's dev
-  module graph. After editing framework source, `pnpm pack:local --refresh <consumer>` and
-  install, or the change silently does not appear — with nothing said about why.
+- **Consequence of installed consumption:** framework `src/` is never in a consumer's dev
+  module graph. After editing framework source, `pnpm registry:publish` then
+  `pnpm update --latest "@cheshire/*"` in the consumer, or the change silently does not
+  appear — with nothing said about why.
 - **Two tools write one `dist/`, and neither may own it.** Vite writes `dist/lib`, `tsc -b`
   writes `dist/types`. A tool that empties its output directory silently deletes the other's
   output, and `tsc -b` then declines to re-emit what its tsbuildinfo says is current. A
@@ -146,10 +158,11 @@ and never implements one. **`workbench` is now a template name only** — the pa
   calls; the workbench owns which view is active, which is what leaves layout persistence
   somewhere to live that an app cannot contradict.
 - **App code never names the runtime.** No Electron modules, process/window APIs, IPC
-  channels, or protocol schemes above the framework line. Enforced from day one. Runtime
-  *interfaces* arrive in Phase 4, validated by the Tauri port — not speculatively before.
-- **Proof gate before a milestone closes:** pack tarball → `create-cheshire` → build → smoke
-  test, against the real artifacts.
+  channels, or protocol schemes above the framework line. Enforced from day one, and the
+  runtime interfaces are designed with the runtime layer — a port validates them and is
+  expected to expose gaps, but nothing waits on one being scheduled.
+- **Proof gate before a milestone closes:** `registry:publish` → `create-cheshire --registry`
+  → build → smoke test, against the real artifacts.
 - **`--no-sandbox` is a dev-only, Linux-only launch flag** and must never reach a packaged
   build. Ubuntu 22+ AppArmor blocks Electron's unprivileged-userns helper and nothing SUIDs
   `chrome-sandbox` inside `node_modules`; an installer's postinstall does, so a real
@@ -173,7 +186,7 @@ and never implements one. **`workbench` is now a template name only** — the pa
 
 Established in stage 0. Target: a single `pnpm check` (lint + compile + test) as the full
 gate, plus the proof gate above at milestone boundaries. Currently: lint, 5 builds, 5
-typechecks, 28 tests.
+typechecks, 29 tests.
 
 A generated app's window is inspected with **`agent-browser`** (`agent-browser connect 9333`
 while `cheshire dev` runs — the CLI already passes `--remote-debugging-port`). Prefer it to a

@@ -1,13 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Library build: the shell ships as built output, never as source (premise 4).
+// Library build: the shell ships as built output, never as source (principle 5).
 // React stays external — the application owns exactly one copy of it.
 export default defineConfig({
   plugins: [react()],
   build: {
     // Vite already defaults to false; stated so a future edit has to argue with
-    // it. A published map would carry the shell's source (premise 4).
+    // it. A published map would carry the shell's source (principle 5).
     sourcemap: false,
 
     // `dist/lib`, not `dist`: Vite empties its outDir, `tsc -b` writes the

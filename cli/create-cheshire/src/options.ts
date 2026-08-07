@@ -11,7 +11,6 @@ export const USAGE = `
 
   Options
     --registry <url>        Install from this registry instead of the default
-    --from-tarballs <dir>   Install the framework from packed tarballs (proof gate)
     --no-install            Skip installing dependencies
     --no-git                Skip \`git init\`
     -h, --help              Show this message
@@ -19,7 +18,6 @@ export const USAGE = `
 
 export interface Options {
   name?: string
-  fromTarballs?: string
   registry?: string
   install: boolean
   git: boolean
@@ -35,12 +33,7 @@ export function parse(argv: string[]): Options {
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index] as string
 
-    if (argument === '--from-tarballs') {
-      const value = argv[index + 1]
-      if (!value) throw new ScaffoldError('create-cheshire: --from-tarballs needs a directory.')
-      options.fromTarballs = value
-      index += 1
-    } else if (argument === '--registry') {
+    if (argument === '--registry') {
       const value = argv[index + 1]
       if (!value) throw new ScaffoldError('create-cheshire: --registry needs a URL.')
       options.registry = value

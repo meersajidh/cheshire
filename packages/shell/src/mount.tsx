@@ -21,7 +21,7 @@ export interface MountOptions {
 /**
  * Boot the shell into the page. Called by the framework-owned renderer entry —
  * an application never calls this, and never authors the entry that does
- * (premise 3).
+ * (principle 2).
  */
 export function mountShell({ config, app, container }: MountOptions): void {
   const host = container ?? document.getElementById('root')

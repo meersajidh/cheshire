@@ -21,7 +21,7 @@ export interface PackageOptions {
  *
  * The whole configuration is derived, never authored: an application states
  * `appId` and `productName` in `cheshire.config.ts` and the framework decides what
- * those mean for a package (premise 3).
+ * those mean for a package (principle 2).
  */
 export async function packageApp(options: PackageOptions = {}, root?: string): Promise<void> {
   const { app, mainEntry } = await build(root)
@@ -48,7 +48,7 @@ function builderConfig(app: AppContext, mainEntry: string): Configuration {
 
     // electron-builder reads the Electron version from the *application's*
     // dependencies, and the application does not have one — the framework owns
-    // the runtime (premise 5). Hand it the version the framework resolved.
+    // the runtime (principle 4). Hand it the version the framework resolved.
     electronVersion: electronVersion(),
 
     directories: { output: 'dist' },

@@ -5,7 +5,7 @@ import type { AppContext } from './app.js'
 /**
  * The `.cheshire/` derivatives.
  *
- * The framework owns the entry (premise 3), and it owns it by *writing* it into
+ * The framework owns the entry (principle 2), and it owns it by *writing* it into
  * the application on every run rather than by smuggling it in as virtual
  * modules. The application still authors only `cheshire.config.ts` and `src/`;
  * everything here is generated, git-ignored, and overwritten without warning.
@@ -137,7 +137,7 @@ start(JSON.parse(process.env.CHESHIRE_RUNTIME_OPTIONS))`
  * A packaged app ships **no `node_modules`**: this file is bundled with the
  * runtime inlined, leaving only `electron` and node builtins external. That is
  * what lets the application declare `cheshire` as a *dev* dependency and never
- * name the runtime (premise 5) — nothing has to be resolvable at runtime except
+ * name the runtime (principle 4) — nothing has to be resolvable at runtime except
  * what Electron itself provides.
  *
  * The renderer is found relative to this file, since the bundle and the built

@@ -10,7 +10,7 @@ export function rendererOutDir(app: AppContext): string {
 
 /**
  * The renderer's Vite config — the whole of it, in code, never on disk. The
- * application authors no build config (premise 3), so there is no file for it
+ * application authors no build config (principle 2), so there is no file for it
  * to have opinions about and no config file for Vite to find.
  *
  * The root is `.cheshire/`, where the generated HTML lives; `src/` is reached from

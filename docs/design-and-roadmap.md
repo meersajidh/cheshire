@@ -2,9 +2,9 @@
 
 > **Version:** 0.1 (living document) · **Date:** 2026-08-03
 >
-> Upstream: [premises.md](premises.md). This document describes how cheshire is structured
-> and built; the premises say what is true at all times. Where the two disagree, the
-> premises win or are amended explicitly.
+> Upstream: [principles.md](principles.md). This document describes how cheshire is structured
+> and built; the principles say what is true at all times. Where the two disagree, the
+> principles win or are amended explicitly.
 >
 > Downstream: [guides/framework-architecture.md](guides/framework-architecture.md) explains the
 > framework pattern this structure is an instance of, and
@@ -61,20 +61,20 @@ A developer should not need to think about the underlying runtime at all. They t
 
 ## 3. Guiding principles
 
-Condensed from the premises; stated here so the design reads on its own.
+Condensed from the principles; stated here so the design reads on its own.
 
-1. **Developer experience first** — every API is judged by effort removed (premise 1).
-2. **Convention over configuration** — minimal setup, sensible defaults (premise 1).
+1. **Developer experience first** — every API is judged by effort removed (principle 1).
+2. **Convention over configuration** — minimal setup, sensible defaults (principle 1).
 3. **Opinionated infrastructure, platform for domain layering** — one obvious way to
-   build; the business domain uses platform services, it never re-plumbs them (premise 1).
-4. **Runtime independence** — a strategic objective, validated by porting in Phase 4
-   (premise 5).
+   build; the business domain uses platform services, it never re-plumbs them (principle 1).
+4. **Runtime independence** — a strategic objective, designed now and validated by a
+   runtime port when one is scheduled (principle 4).
 5. **Momentum over meta-work** — consolidation never blocks the next runnable milestone
-   (premise 8).
+   (principle 6).
 
 ## 4. The two products
 
-The most important structural fact (premise 2): cheshire is **two products**.
+The most important structural fact (principle 5): cheshire is **two products**.
 
 ```
                         YOU
@@ -139,7 +139,7 @@ switched on and what things are called**, not in code an application would other
 carries structured storage, another carries only blobs, another carries neither.
 
 **A template's choices are declared in `cheshire.config.ts`**, which makes the template a _preset
-over the config contract_ rather than a parallel mechanism (premise 3 — one place where an
+over the config contract_ rather than a parallel mechanism (principle 2 — one place where an
 application says what it _is_):
 
 ```ts
@@ -203,9 +203,9 @@ Development application(s) whose purpose is to dogfood the framework. Nothing se
 domain-specific; it exercises menus, docking, the command palette, theming — the platform
 surface itself.
 
-**It installs cheshire from a packed tarball or a local registry — exactly what a real
-developer gets. Never a workspace link** (premise 4): links resolve source paths and hide
-packaging failures.
+**It installs cheshire from the local registry — exactly what a real developer gets. Never a
+workspace link**: links resolve source paths and hide packaging failures. That rule, and the
+proximity rule beside it, are hard invariants rather than principles; `CLAUDE.md` holds them.
 
 ## 6. Repository structure
 
@@ -306,7 +306,7 @@ mistake as `--no-sandbox` reaching a packaged build.
 
 **runtime** — runtime-specific implementations, `runtime/electron` first: window creation,
 native dialogs, native menus, auto-update. Safe renderer–main IPC is an internal detail
-here, not a package. Applications never import this directly (premise 5).
+here, not a package. Applications never import this directly (principle 4).
 
 **host** — the application's own backend process and the channel cheshire brokers to it. Not
 built; see [the application surface](application-surface.md) §4 for why it is a third
@@ -326,7 +326,7 @@ my-app/
 │   ├── menus/
 │   └── services/
 ├── package.json          # scripts call the cheshire CLI
-└── cheshire.config.ts       # the config contract (premise 3)
+└── cheshire.config.ts       # the config contract (principle 2)
 ```
 
 What the application does **not** contain: a process entry file, Electron/Vite config, a
@@ -345,7 +345,7 @@ Feature idea
    ▼
 Implement framework API        (cheshire repo)
    ▼
-Exercise it in the playground  (play-cheshire, installed from tarball)
+Exercise it in the playground  (play-cheshire, installed from the local registry)
    ▼
 Improve the API — repeat
    ▼
@@ -358,9 +358,10 @@ Release CLI
 
 The playground is never the product. It is the proving ground.
 
-**The proof gate** (premise 4): before a milestone closes, the loop
-`pack tarball → create-cheshire → build → smoke test` runs against the real artifacts. The
-generated-from-tarball application is the ground truth; the playground is for speed.
+**The proof gate:** before a milestone closes, the loop
+`registry:publish → create-cheshire --registry → build → smoke test` runs against the real
+artifacts. The application generated from the registry is the ground truth; the playground is
+for speed.
 
 ## 10. Bootstrapping flow
 
@@ -376,23 +377,72 @@ cd my-app && npm run dev     # invokes the cheshire CLI
 A workbench window opens. Ready.
 ```
 
-## 11. Versioning
+## 11. Versioning and the two publishes
 
-Packages follow semantic versioning. `create-cheshire` always generates projects pinned to a
+Packages follow semantic versioning. `create-cheshire` always generates projects against a
 compatible, tested set of `@cheshire/*` versions — a generated app never starts life on a
 mismatched matrix.
 
+**All five packages move together.** They cross-reference with `workspace:^`, and
+`create-cheshire` stamps *its own* version into the application it generates (`cli.ts:76`). A
+release where one package lags is a generated application asking for a version that does not
+exist.
+
+There are two publishes, and they are not variations of one thing:
+
+|  | **Development** | **Release** |
+| --- | --- | --- |
+| Command | `pnpm registry:publish` | `pnpm -r publish` |
+| Target | local Verdaccio, `http://localhost:4873` | npmjs.org |
+| Version | `<next patch>-dev.<timestamp>`, stamped per publish | the real version in the manifests |
+| Permanence | disposable — `registry:reset` forgets everything | permanent; 72-hour unpublish window, then the number is burned |
+| Builds first | yes | **no** |
+| How often | every iteration | at a milestone |
+
+### Development — `pnpm registry:publish`
+
+The whole consumer loop, and the only way cheshire reaches a consumer during development.
+`registry:start` runs Verdaccio in the foreground; `registry:publish` builds all five, stamps a
+version nobody has seen, and publishes. A consumer refreshes with
+`pnpm update --latest "@cheshire/*"`.
+
+It **refuses to run unless the registry answers** a bounded TCP probe. That guard is the only
+thing standing between a mistyped flag and a real publish to npmjs.org, so it is not optional
+and not a convenience.
+
+Why a fresh version every time rather than overwriting one: republishing a version is rejected
+by Verdaccio and unusable by pnpm, for reasons written out at `scripts/registry-local.mjs`'s
+`stamp()`. Why `--latest` on the consumer side: a plain `pnpm update` rewrites the specifier to
+an exact pin, so it refreshes once and is a silent no-op after. Both were measured.
+
+### Release — `pnpm -r publish`
+
+Set the version in all five manifests, build, then publish. **`pnpm publish` does not build** —
+`dist/` is whatever was last built, so a release that skips `pnpm -r build` ships the previous
+milestone's code under the new version's name, and nothing says so.
+
+```bash
+pnpm check          # lint + build + typecheck + test
+pnpm -r build       # not optional — publish will not do it
+pnpm -r publish
+```
+
+The proof gate runs *before* this, against the local registry, not against npm: the point of a
+dev registry is that the shipping path is exercised without spending a version number to find
+out it was wrong.
+
 ## 12. Runtime independence
 
-A first-class strategic objective (premise 5), executed in two moves:
+A first-class strategic objective (principle 4), executed in two moves:
 
 1. **Now — the enforced invariant.** No application code names the runtime: no Electron
    modules, process/window APIs, IPC channels, or schemes. Everything reaches the runtime
    through cheshire's abstractions. This is testable from day one.
-2. **Phase 4 — the real test.** Introduce the runtime interfaces (`WindowService`,
-   `MenuService`, `DialogService`, `FileSystemService`, …), decouple Electron behind them,
-   and **prototype a Tauri backend**. The interfaces are validated by the port itself —
-   not frozen speculatively before a second runtime exists.
+2. **The real test — a port.** The runtime interfaces (`WindowService`, `MenuService`,
+   `DialogService`, `FileSystemService`, …) are designed with the runtime layer and decouple
+   Electron behind them. A **Tauri backend** is the candidate port, and it validates them by
+   being written; expect it to expose gaps, because that is what a port is for. Nothing in the
+   design waits on one being scheduled.
 
 ```
         Application
@@ -441,11 +491,11 @@ The app restarts with its layout preserved.
 pnpm build produces a runnable package.
 ```
 
-Sliced so every stage ends with something that runs (premise 8):
+Sliced so every stage ends with something that runs (principle 6):
 
 | Stage | Slice                | Exit condition (runs, and is run)                                                                                                                                                                             |
 | ----- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | Create → dev → build | `pnpm create cheshire demo` generates an app with `cheshire.config.ts`; `pnpm dev` opens the workbench shell; `pnpm build` produces a runnable package — cheshire consumed **from a tarball** from the very first run. |
+| 0     | Create → dev → build | `pnpm create cheshire demo` generates an app with `cheshire.config.ts`; `pnpm dev` opens the workbench shell; `pnpm build` produces a runnable package — cheshire consumed **from a real install** from the very first run. |
 | 1     | Views                | The app contributes a view; it renders in the workbench.                                                                                                                                                      |
 | 2     | Commands & menus     | The app's command appears in the menu and on a shortcut, and opens the view.                                                                                                                                  |
 | 3     | Layout persistence   | The app restarts with its layout preserved. Milestone A complete.                                                                                                                                             |
@@ -482,7 +532,7 @@ Sliced so every stage ends with something that runs (premise 8):
 │                                  │   │                                  │
 │  src/                            │   │  apps/                           │
 │  ├── index.ts   views/           │   │                                  │
-│  ├── commands/  services/        │   │  installs from tarball/registry  │
+│  ├── commands/  services/        │   │  installs from the local registry │
 │  └── features/  menus/           │   │  dogfoods the framework          │
 │  cheshire.config.ts                 │   │                                  │
 │                                  │   │                                  │
