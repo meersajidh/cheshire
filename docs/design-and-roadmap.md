@@ -199,9 +199,11 @@ and is not a snapshot of any one playground app.
    Missing pnpm is a clear refusal naming the fix, with the application still generated — never a
    silent npm install that ignores the linker and fails later at packaging.
 
-2. **`@cheshire/app`** — the framework tooling an application uses day to day: `dev`, `build`,
+2. **`@cheshire/cli`** — the framework tooling an application uses day to day: `dev`, `build`,
    `package`. Owned and shipped by the framework, so application authors never configure
-   Electron or Vite targets themselves.
+   Electron or Vite targets themselves. It installs the `cheshire` bin and exports nothing: an
+   application depends on it for a command, never for an import. That is why it is a
+   devDependency while `@cheshire/app` is a dependency.
 
 Tooling is part of the framework. The generated application's `package.json` scripts call
 `cheshire`, and the framework owns what those verbs mean.
@@ -221,20 +223,29 @@ Framework repository:
 ```
 cheshire/
 ├── packages/
-│   ├── core/             @cheshire/core
-│   ├── shell/            @cheshire/shell
-│   └── runtime/
-│       └── electron/     @cheshire/runtime-electron
-├── cli/
-│   ├── cheshire/         @cheshire/app — the `cheshire` bin and the app-facing module surface
-│   └── create-cheshire/  create-cheshire
+│   ├── app/                @cheshire/app — the application's whole import surface
+│   ├── cli/                @cheshire/cli — the `cheshire` bin; exports nothing
+│   ├── core/               @cheshire/core
+│   ├── create-cheshire/    create-cheshire
+│   ├── runtime-electron/   @cheshire/runtime-electron
+│   └── shell/              @cheshire/shell
 ├── templates/
-│   └── workbench/        a blueprint, deliberately not a workspace package
+│   └── workbench/          a blueprint, deliberately not a workspace package
 ├── docs/
 ├── scripts/
 ├── package.json
 └── pnpm-workspace.yaml
 ```
+
+**A package's directory basename is its name with the scope stripped.** Flat, one level, no
+exceptions — stripping an absent scope is a no-op, so unscoped `create-cheshire` obeys the same
+rule as `@cheshire/runtime-electron`. `pnpm-workspace.yaml` is therefore a single `packages/*`
+glob, and `scripts/check-layout.mjs` fails the build if a directory and its package name ever
+disagree.
+
+The rule exists because the previous layout drifted exactly that way: `cli/cheshire/` published
+as `@cheshire/app`, reading as tooling on disk and as an application surface on npm. Nothing
+failed, because a directory name reaches no consumer — only a reader.
 
 Playground repository (separate; installs cheshire like any consumer):
 
@@ -317,7 +328,7 @@ them. **Developer tooling does not**: the component gallery, a contribution insp
 Electron devtools shortcut. The split is a build gate, not a convention; the same class of
 mistake as `--no-sandbox` reaching a packaged build.
 
-**runtime** ✅ — runtime-specific implementations, `runtime/electron` first: window creation,
+**runtime** ✅ — runtime-specific implementations, `runtime-electron` first: window creation,
 native dialogs, native menus, auto-update. Safe renderer–main IPC is an internal detail
 here, not a package. Applications never import this directly (principle 4).
 
@@ -562,11 +573,12 @@ Sliced so every stage ends with something that runs (principle 6):
 | Framework / repo        | `cheshire`                                                  |
 | npm scope               | `@cheshire/*`                                               |
 | Create package          | `create-cheshire` (`npm create cheshire`)                   |
-| Tooling CLI             | `@cheshire/app` — installs the `cheshire` command           |
-| Application facade      | `@cheshire/app` — the only package an application imports   |
+| Tooling CLI             | `@cheshire/cli` — installs the `cheshire` command           |
+| Application surface     | `@cheshire/app` — the only package an application imports   |
 | Config contract         | `cheshire.config.ts` — `defineConfig({ ... })`              |
 | Contribution contract   | `src/index.ts` — default-exports `defineApp({ views })`     |
-| Contribution entry      | `@cheshire/core/views`, re-exported through `@cheshire/app` |
+| Contribution entry      | `@cheshire/core/views`, forwarded whole by `@cheshire/app`  |
+| Internal entry suffix   | `/internal` — published, forwarded by nothing app-facing    |
 | Playground repo         | `play-cheshire`                                             |
 | Design system           | `@cheshire/ui`                                              |
 | Command system          | `@cheshire/commands` (internal to `shell` until extracted)  |
@@ -577,7 +589,7 @@ Sliced so every stage ends with something that runs (principle 6):
 npm registry status (checked 2026-08-06): the `@cheshire` org is **created and owned**, so the
 scope reserves every package on the roadmap. Unscoped `cheshire` is taken by an unrelated,
 dormant package (a websocket boardgame framework, last published 2022) — which is why there is
-no bare package and the application facade is `@cheshire/app`. `create-cheshire` is free, so
+no bare package and the application surface is `@cheshire/app`. `create-cheshire` is free, so
 `pnpm create cheshire my-app` reads exactly as intended, and the `cheshire` command still exists
 because a bin name lives in the application's own `node_modules/.bin` and never touches a
 registry.

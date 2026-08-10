@@ -17,7 +17,7 @@
  * takes a fresh one rather than overwriting.
  *
  *   node scripts/registry-local.mjs start      run Verdaccio in the foreground
- *   node scripts/registry-local.mjs publish    build, stamp, publish all five
+ *   node scripts/registry-local.mjs publish    build, stamp, publish every package
  *   node scripts/registry-local.mjs status     what the registry currently holds
  *   node scripts/registry-local.mjs reset      forget every published version
  *
@@ -25,7 +25,7 @@
  * one guard that matters: without it, a mistyped flag publishes to npmjs.org.
  */
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, globSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { connect } from 'node:net'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -41,14 +41,20 @@ const HOME = join(
   'verdaccio',
 )
 
-/** Packed in dependency order, which keeps the output readable. */
-const PACKAGES = [
-  'packages/core',
-  'packages/shell',
-  'packages/runtime/electron',
-  'cli/cheshire',
-  'cli/create-cheshire',
-]
+/**
+ * Every workspace package, read from the filesystem rather than listed here.
+ *
+ * A hardcoded list is the one failure this script cannot report: a package added
+ * to the workspace and forgotten here is simply never published, and the
+ * consumer's install fails naming a version — not a missing package. The glob
+ * matches `pnpm-workspace.yaml`'s, so the two cannot disagree.
+ *
+ * Order is presentation only. Nothing installs between publishes, so a package
+ * may go up before the packages it depends on.
+ */
+const PACKAGES = globSync('packages/*/package.json', { cwd: ROOT })
+  .map(dirname)
+  .sort()
 
 const COMMANDS = { start, publish, status, reset }
 
@@ -100,6 +106,13 @@ async function publish() {
   console.log('  building…\n')
   run('pnpm', ['-r', 'build'], ROOT)
 
+  // Publishing packs whatever `dist/` holds; it does not build. A build that
+  // emitted nothing — `tsc -b` trusting a tsBuildInfoFile that outlived its
+  // output — leaves a manifest promising files nobody wrote, and the failure
+  // surfaces two steps later in a consumer as `spawn <bin> ENOENT`. Measured,
+  // and it published a broken `create-cheshire` before this line existed.
+  run('node', ['scripts/check-dist.mjs'], ROOT)
+
   const version = stamp()
   const originals = new Map()
 
@@ -111,7 +124,7 @@ async function publish() {
       originals.set(manifestPath, original)
 
       // `pnpm publish` substitutes the published version for every `workspace:^`,
-      // so stamping all five before publishing any of them is what keeps the
+      // so stamping every package before publishing any of them is what keeps the
       // framework's cross-references pointing at each other.
       const manifest = JSON.parse(original)
       manifest.version = version
@@ -163,7 +176,10 @@ async function publish() {
  * committed: the stamped version exists only in what was published.
  */
 function stamp() {
-  const base = JSON.parse(readFileSync(join(ROOT, PACKAGES[0], 'package.json'), 'utf8')).version
+  // Read from core by name, not from PACKAGES[0]: the list is a glob now, so an
+  // index would silently start meaning a different package the day one is added.
+  // Every package carries the same version — they are stamped together below.
+  const base = JSON.parse(readFileSync(join(ROOT, 'packages/core/package.json'), 'utf8')).version
   const [major, minor, patch] = base.split('-')[0].split('.').map(Number)
   const now = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)
   return `${major}.${minor}.${patch + 1}-dev.${now}`
@@ -175,7 +191,13 @@ async function status() {
     return
   }
   console.log(`\n  ${REGISTRY}\n`)
-  for (const name of ['@cheshire/app', '@cheshire/core', '@cheshire/shell', '@cheshire/runtime-electron', 'create-cheshire']) {
+
+  // Names come from the workspace manifests, never from a list written here.
+  // A literal list made `@cheshire/cli` invisible to the one command you would
+  // run to confirm a publish worked — it had been published seconds earlier.
+  for (const name of PACKAGES.map(
+    (dir) => JSON.parse(readFileSync(join(ROOT, dir, 'package.json'), 'utf8')).name,
+  )) {
     const probe = spawnSync('npm', ['view', name, 'version', '--registry', REGISTRY], {
       encoding: 'utf8',
       shell: process.platform === 'win32',

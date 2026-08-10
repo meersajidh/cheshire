@@ -1,23 +1,21 @@
 {
-  "name": "create-cheshire",
+  "name": "@cheshire/runtime-electron",
   "version": "0.1.2",
   "type": "module",
-  "description": "Generate a cheshire desktop application",
+  "description": "cheshire's Electron runtime — process entry, window creation, lifecycle",
   "license": "MIT",
   "homepage": "https://github.com/meersajidh/cheshire",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/meersajidh/cheshire.git",
-    "directory": "cli/create-cheshire"
+    "directory": "packages/runtime-electron"
   },
   "bugs": "https://github.com/meersajidh/cheshire/issues",
   "keywords": [
     "cheshire",
     "desktop",
     "framework",
-    "electron",
-    "scaffold",
-    "create"
+    "electron"
   ],
   "engines": {
     "node": ">=22"
@@ -25,19 +23,26 @@
   "publishConfig": {
     "access": "public"
   },
-  "bin": {
-    "create-cheshire": "./dist/cli.js"
+  "exports": {
+    "./main": {
+      "types": "./dist/main.d.ts",
+      "default": "./dist/main.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -b && node scripts/copy-template.mjs",
+    "build": "tsc -b",
     "typecheck": "tsc -b",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist node_modules/.tmp"
+  },
+  "dependencies": {
+    "@cheshire/core": "workspace:^"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
+    "electron": "catalog:",
     "typescript": "catalog:"
   }
 }

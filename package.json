@@ -14,12 +14,14 @@
     "lint": "eslint .",
     "test": "vitest run",
     "cites": "node scripts/check-cites.mjs",
-    "check": "pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm cites",
+    "layout": "node scripts/check-layout.mjs",
+    "dist": "node scripts/check-dist.mjs",
+    "check": "pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm cites && pnpm layout && pnpm dist",
     "registry:start": "node scripts/registry-local.mjs start",
     "registry:publish": "node scripts/registry-local.mjs publish",
     "registry:status": "node scripts/registry-local.mjs status",
     "registry:reset": "node scripts/registry-local.mjs reset",
-    "clean": "pnpm -r exec rm -rf dist && rm -rf .cheshire"
+    "clean": "pnpm -r run clean && rm -rf .cheshire"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

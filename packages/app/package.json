@@ -1,21 +1,20 @@
 {
-  "name": "@cheshire/runtime-electron",
+  "name": "@cheshire/app",
   "version": "0.1.2",
   "type": "module",
-  "description": "cheshire's Electron runtime — process entry, window creation, lifecycle",
+  "description": "The application's surface onto cheshire — the only @cheshire package an application imports",
   "license": "MIT",
   "homepage": "https://github.com/meersajidh/cheshire",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/meersajidh/cheshire.git",
-    "directory": "packages/runtime/electron"
+    "directory": "packages/app"
   },
   "bugs": "https://github.com/meersajidh/cheshire/issues",
   "keywords": [
     "cheshire",
     "desktop",
-    "framework",
-    "electron"
+    "framework"
   ],
   "engines": {
     "node": ">=22"
@@ -24,9 +23,9 @@
     "access": "public"
   },
   "exports": {
-    "./main": {
-      "types": "./dist/main.d.ts",
-      "default": "./dist/main.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -36,13 +35,21 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist node_modules/.tmp"
+  },
+  "peerDependencies": {
+    "react": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@cheshire/core": "workspace:^"
   },
   "devDependencies": {
-    "electron": "catalog:",
+    "@types/react": "catalog:",
     "typescript": "catalog:"
   }
 }

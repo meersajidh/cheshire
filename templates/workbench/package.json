@@ -9,11 +9,14 @@
     "build": "cheshire build",
     "package": "cheshire package"
   },
-  "devDependencies": {
+  "dependencies": {
     "@cheshire/app": "{{cheshireVersion}}",
-    "@cheshire/shell": "{{cheshireVersion}}",
-    "@types/react": "{{reactTypesVersion}}",
     "react": "{{reactVersion}}",
     "react-dom": "{{reactVersion}}"
+  },
+  "devDependencies": {
+    "@cheshire/cli": "{{cheshireVersion}}",
+    "@cheshire/shell": "{{cheshireVersion}}",
+    "@types/react": "{{reactTypesVersion}}"
   }
 }

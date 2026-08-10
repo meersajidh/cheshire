@@ -28,13 +28,32 @@ briefly `mogget`; both died at the registry — `dinah`'s bare name is a maintai
 and the `@mogget` org was already owned. **The rule that came out of it: secure the scope, not the
 name.** A bare name is a per-package lottery; an org reserves the whole roadmap at once.
 
-Five packages: `@cheshire/core`, `@cheshire/shell`, `@cheshire/runtime-electron`,
-**`@cheshire/app`** and `create-cheshire`. There is deliberately **no bare `cheshire` package** —
-that name is taken by an unrelated dormant project — so `@cheshire/app` is the facade an
-application imports from, and it installs the `cheshire` command. A bin name lives in the
-application's own `node_modules/.bin` and never touches a registry, which is why every
-user-visible string (`pnpm create cheshire`, `cheshire dev`, `cheshire.config.ts`) survived
-unchanged.
+Six packages: `@cheshire/core`, `@cheshire/shell`, `@cheshire/runtime-electron`,
+**`@cheshire/app`**, **`@cheshire/cli`** and `create-cheshire`. There is deliberately **no bare
+`cheshire` package** — that name is taken by an unrelated dormant project — so `@cheshire/cli`
+installs the `cheshire` command. A bin name lives in the application's own `node_modules/.bin`
+and never touches a registry, which is why every user-visible string (`pnpm create cheshire`,
+`cheshire dev`, `cheshire.config.ts`) survived both the rename and the split unchanged.
+
+**Two names are application-facing and the rest are not.** `create-cheshire` generates the
+application; **`@cheshire/app` is its entire surface onto cheshire thereafter** — an application
+imports that name and no other `@cheshire/*` package, ever. `core`, `shell`,
+`runtime-electron` and every system package to come are the framework's internal factoring.
+`@cheshire/cli` is a devDependency that supplies a command, not an import.
+
+**A package's directory basename is its name with the scope stripped**, flat under `packages/`
+— `packages/runtime-electron`, `packages/create-cheshire` (stripping an absent scope is a
+no-op, so the rule has no exceptions). `scripts/check-layout.mjs` gates it, and
+`pnpm-workspace.yaml` is one glob because of it.
+
+**Entries split on two axes, and `@cheshire/app` is `export *` because of it.** A framework
+package's *public* entry is exactly its application-facing API; framework-internal API lives on
+a matching `internal` entry (`@cheshire/core/internal`, `@cheshire/core/views/internal`). That
+is what makes forwarding whole entries safe — a hand-listed re-export drifts silently, since a
+symbol added upstream is simply absent downstream with no error anywhere. Crossing that is the
+second axis, runtime environment: the barrel stays React-free because
+`@cheshire/runtime-electron` imports it from the main process, so React-touching API sits on
+`./views` and later `./react` and `./ui`.
 
 **Stage 1 — complete.** An app contributes a view and the shell renders it.
 `src/index.ts` default-exports `defineApp({ views })`, the generated renderer imports it by
@@ -167,7 +186,7 @@ and never implements one. **`workbench` is now a template name only** — the pa
   build. Ubuntu 22+ AppArmor blocks Electron's unprivileged-userns helper and nothing SUIDs
   `chrome-sandbox` inside `node_modules`; an installer's postinstall does, so a real
   installation needs no flag. It is **not** `webPreferences.sandbox`, which stays `true`
-  everywhere. The reasoning lives at the call site in `cli/cheshire/src/electron.ts` — keep it
+  everywhere. The reasoning lives at the call site in `packages/cli/src/electron.ts` — keep it
   there, or someone collapses the platform check and ships it.
 - **No plugin system.** First-party surface only; apps contributing views/commands/menus
   is the platform's ordinary surface, not a plugin mechanism.

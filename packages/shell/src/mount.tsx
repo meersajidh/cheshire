@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { ResolvedCheshireConfig } from '@cheshire/core'
-import { resolveApp } from '@cheshire/core/views'
+import { resolveApp } from '@cheshire/core/views/internal'
 import { Shell } from './Shell.js'
 
 export interface MountOptions {

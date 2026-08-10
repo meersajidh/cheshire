@@ -1,7 +1,10 @@
+# One glob, because a package's directory basename is its name with the scope
+# stripped — `@cheshire/runtime-electron` in `packages/runtime-electron`,
+# unscoped `create-cheshire` in `packages/create-cheshire`. Stripping an absent
+# scope is a no-op, so the rule has no exceptions and `scripts/check-layout.mjs`
+# enforces it.
 packages:
   - 'packages/*'
-  - 'packages/runtime/*'
-  - 'cli/*'
 
 # templates/ is deliberately NOT a workspace package: template dependencies are
 # resolved by create-cheshire inside the generated app, never installed here.

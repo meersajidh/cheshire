@@ -37,7 +37,7 @@
   "scripts": {
     "build": "vite build && tsc -b",
     "typecheck": "tsc -b",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist node_modules/.tmp"
   },
   "peerDependencies": {
     "react": "catalog:",

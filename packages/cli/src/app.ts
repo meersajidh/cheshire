@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { runnerImport } from 'vite'
-import { CheshireConfigError, resolveConfig } from '@cheshire/core'
+import { CheshireConfigError, resolveConfig } from '@cheshire/core/internal'
 import type { CheshireConfig, ResolvedCheshireConfig } from '@cheshire/core'
 import { CheshireCliError } from './errors.js'
 

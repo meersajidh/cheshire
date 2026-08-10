@@ -18,13 +18,18 @@ its customer and lives in its own repository, depending on released `@cheshire/*
 never on framework source.
 
 ```
-packages/    @cheshire/* — core, react, ui, shell, layout, commands, customization,
-             storage, identity, devtools, runtime, host
+packages/    every package, flat, each directory named for what it publishes as:
+             app, cli, core, create-cheshire, runtime-electron, shell — plus
+             react, ui, layout, commands, customization, storage, identity,
+             devtools and host as the systems land
 templates/   opinionated blueprints — a configuration of cheshire's systems (workbench)
-cli/         create-cheshire (project generation) + @cheshire/app (dev, build,
-             package — and the only package an application imports from)
 docs/        principles and architecture
 ```
+
+Exactly two of those names are application-facing: **`create-cheshire`**, which generates the
+application, and **`@cheshire/app`**, which is its entire surface onto cheshire thereafter. The
+rest are the framework's internal factoring — real packages with real boundaries that an
+application never imports.
 
 ## Docs
 

@@ -9,5 +9,5 @@
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.ts"],
-  "references": [{ "path": "../../packages/core" }, { "path": "../../packages/runtime/electron" }]
+  "references": [{ "path": "../core" }, { "path": "../runtime-electron" }]
 }

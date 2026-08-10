@@ -215,11 +215,18 @@ Three properties of that shape are the point of it:
   from the runtime. That keeps [principle 4](../principles.md) intact: React is the platform's UI
   language under Electron and would be under Tauri too, so naming it is not naming the runtime.
 
-The contract lives in `@cheshire/core` on a **separate entry**, `@cheshire/core/views`, and re-exports
-through `@cheshire/app` so an application still names one package. The split is load-bearing:
+The contract lives in `@cheshire/core` on a **separate entry**, `@cheshire/core/views`, forwarded
+whole by `@cheshire/app` so an application still names one package. The split is load-bearing:
 `@cheshire/runtime-electron` imports the core barrel from the main process, and the barrel must stay
 React-free — with `skipLibCheck` on, an unresolved `react` inside a `.d.ts` degrades to `any` in
 silence rather than erroring.
+
+Crossing that split is a second one, by audience. `@cheshire/core/views` carries `defineApp` and
+its types — what an application declares. `resolveApp` and `CheshireAppError`, which validate a
+declaration, sit on `@cheshire/core/views/internal` and are `@cheshire/shell`'s alone. That is
+what lets `@cheshire/app` be `export *` rather than a hand-kept list: a public entry is exactly
+the application-facing API, so forwarding all of it cannot leak an internal, and a symbol added
+upstream cannot go silently missing downstream.
 
 Commands and menus (stage 2) extend the same object. Nothing about the mechanism changes.
 
@@ -281,14 +288,17 @@ external — they are baked into the Electron binary and exist only at run time,
 bundled and do not need to be. Everything else is concatenated into one file.
 
 **Therefore a packaged application ships no `node_modules` at all.** The asar contains the main
-bundle, the renderer bundle and a `package.json`: about 396 KB for the stage-1 app. That in turn
-is what lets an application declare `@cheshire/app` as a **devDependency** and never name the runtime,
-which is [principle 4](../principles.md) holding in practice rather than in principle.
+bundle, the renderer bundle and a `package.json`: about 396 KB for the stage-1 app. The
+application names no runtime anywhere in that — [principle 4](../principles.md) holding in
+practice rather than in principle.
 
 The trap under it: electron-builder collects production dependencies in a pass of its own,
-_outside_ the `files` patterns, and only an explicit `!node_modules/**` stops it. Without both
-defences — dev-only dependencies _and_ the negation — an app ships Vite, TypeScript and
-electron-builder inside its own installer.
+_outside_ the `files` patterns, and only an explicit `!node_modules/**` stops it. That negation
+is now the whole defence rather than half of it. It used to be backed up by an accident — every
+`@cheshire/*` was a devDependency, so the production pass found nothing to collect. Since
+`@cheshire/app` became the application's import surface it is an honest **dependency**, beside
+`react` and `react-dom`, and the pass has real entries to walk. Remove the negation and the
+installer grows to match.
 
 ---
 
@@ -321,7 +331,7 @@ installation is unaffected, because the installer's postinstall does SUID it.
 
 > This is **not** `webPreferences.sandbox`, which stays `true` everywhere. They are different
 > settings with confusingly similar names, and the flag is dev-only and Linux-only. The reasoning
-> lives at the call site in `cli/cheshire/src/electron.ts` — keep it there.
+> lives at the call site in `packages/cli/src/electron.ts` — keep it there.
 
 ---
 

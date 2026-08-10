@@ -39,20 +39,25 @@ section on it at the end.
 
 ---
 
-## Orientation: five packages, two CLIs, one template
+## Orientation: six packages, one template
 
 ```
 cheshire/
 ├── packages/
-│   ├── core/                  @cheshire/core              the config + contribution contracts
-│   ├── shell/                 @cheshire/shell             the React shell
-│   └── runtime/electron/      @cheshire/runtime-electron  window + lifecycle
-├── cli/
-│   ├── cheshire/                 cheshire                    dev · build · package
-│   └── create-cheshire/          create-cheshire             generate an application
-├── templates/workbench/       a blueprint (not a workspace package)
+│   ├── app/                @cheshire/app               what an application imports
+│   ├── cli/                @cheshire/cli               dev · build · package
+│   ├── core/               @cheshire/core              the config + contribution contracts
+│   ├── create-cheshire/    create-cheshire             generate an application
+│   ├── runtime-electron/   @cheshire/runtime-electron  window + lifecycle
+│   └── shell/              @cheshire/shell             the React shell
+├── templates/workbench/    a blueprint (not a workspace package)
 └── docs/
 ```
+
+Flat, and the directory basename is always the package name with the scope stripped —
+including for unscoped `create-cheshire`, where stripping an absent scope is a no-op.
+`scripts/check-layout.mjs` enforces it, so the name on npm and the name on disk cannot
+drift apart.
 
 A **template** is an opinionated blueprint — a configuration of cheshire's systems that
 `create-cheshire` materialises into an application (design & roadmap §5). `workbench` is the only one
@@ -64,10 +69,11 @@ Split by who runs the code, which is the split that matters when you are looking
 
 | Runs in | Packages |
 | --- | --- |
-| The developer's terminal | `@cheshire/app`, `create-cheshire` |
+| The developer's terminal | `@cheshire/cli`, `create-cheshire` |
 | Electron's main process | `@cheshire/runtime-electron` |
 | The browser page | `@cheshire/shell` |
-| All three | `@cheshire/core` — types plus four pure functions, on two entries |
+| All three | `@cheshire/core` — types plus four pure functions, on four entries |
+| Nothing — it is a surface, not a stage | `@cheshire/app`, which re-exports core's public entries |
 
 `@cheshire/core` has a second entry, `@cheshire/core/views`, and the split is not cosmetic. It holds the
 contribution contract, which names React's `ComponentType`; the barrel stays React-free because
@@ -88,7 +94,7 @@ those two words.
 
 ### 1. The CLI dispatches
 
-`cli/cheshire/src/cli.ts` — a shebang, a switch, and an error handler.
+`packages/cli/src/cli.ts` — a shebang, a switch, and an error handler.
 
 The error handler at the bottom is the part worth noticing:
 
@@ -101,14 +107,14 @@ if (error instanceof CheshireCliError) {
 }
 ```
 
-`CheshireCliError` (`cli/cheshire/src/errors.ts:CheshireCliError`) means "this message is already the whole story for
+`CheshireCliError` (`packages/cli/src/errors.ts:CheshireCliError`) means "this message is already the whole story for
 the developer reading it" — printed without a stack, because a stack through framework internals
 tells an application author nothing they can act on. Anything else is a bug in cheshire and keeps its
 stack. When you add a CLI failure path, that is the choice you are making.
 
 ### 2. Finding and reading the application
 
-`cli/cheshire/src/app.ts:loadApp()` — `loadApp()`.
+`packages/cli/src/app.ts:loadApp()` — `loadApp()`.
 
 ```ts
 const { module } = await runnerImport<{ default?: CheshireConfig }>(configPath)
@@ -138,7 +144,7 @@ looks at what an app contributes.
 
 ### 3. Generating `.cheshire/`
 
-`cli/cheshire/src/generate.ts:generate()` — `generate()` writes seven files and returns the paths worth
+`packages/cli/src/generate.ts:generate()` — `generate()` writes seven files and returns the paths worth
 naming.
 
 | File | What it is |
@@ -192,7 +198,7 @@ comment names all three traps. Do not "clean up" the explicit `include` list.
 
 ### 4. The dev server
 
-`cli/cheshire/src/dev.ts:dev()` — `dev()`, and `cli/cheshire/src/renderer-config.ts:rendererConfig()` for the config it
+`packages/cli/src/dev.ts:dev()` — `dev()`, and `packages/cli/src/renderer-config.ts:rendererConfig()` for the config it
 uses.
 
 The Vite config is **in code, never on disk**. The application authors no build config, so there
@@ -212,7 +218,7 @@ window load races the port (`dev.ts:dev()`).
 
 ### 5. The Electron binary, and the flags
 
-`cli/cheshire/src/electron.ts`.
+`packages/cli/src/electron.ts`.
 
 `ensureElectronBinary():33` checks for the binary and downloads it if missing. This is not
 defensive coding — electron 43 declares **no postinstall**. It ships its downloader as a bin
@@ -231,7 +237,7 @@ through `CHESHIRE_RUNTIME_OPTIONS`.
 
 ### 6. The main process
 
-`packages/runtime/electron/src/main.ts` — 77 lines, and the only file in cheshire that imports
+`packages/runtime-electron/src/main.ts` — 77 lines, and the only file in cheshire that imports
 `electron`.
 
 `start(options):59` sets the app name and identifier, waits for `whenReady`, and creates a window.
@@ -284,7 +290,7 @@ the order of 400 lines.
 
 ## Part 2 — `pnpm build`
 
-`cli/cheshire/src/build.ts:build()`.
+`packages/cli/src/build.ts:build()`.
 
 Same first two steps as `dev` — load the config, generate `.cheshire/` — then three more:
 
@@ -294,7 +300,7 @@ Same first two steps as `dev` — load the config, generate `.cheshire/` — the
    stack.
 2. **Build the renderer** — the same Vite config as dev, with `build.outDir` and `base: './'`,
    because a packaged renderer is loaded from a `file://` path and not from the root of an origin.
-3. **Build the main process** (`cli/cheshire/src/main-config.ts:mainConfig()`).
+3. **Build the main process** (`packages/cli/src/main-config.ts:mainConfig()`).
 
 That third step is the one to read properly. `RUNTIME_PROVIDED` at `main-config.ts:RUNTIME_PROVIDED` is
 `electron` plus every Node builtin, in both bare and `node:` form. They stay external because they
@@ -310,7 +316,7 @@ forced so the entry is unambiguously ESM to Electron regardless of the surroundi
 
 ## Part 3 — `pnpm package`
 
-`cli/cheshire/src/pack.ts:packageApp()` — `packageApp()` builds, then hands the result to electron-builder's
+`packages/cli/src/pack.ts:packageApp()` — `packageApp()` builds, then hands the result to electron-builder's
 programmatic API. `builderConfig():44` is the whole configuration, derived from the app's config;
 nothing is authored by the app.
 
@@ -322,8 +328,9 @@ resolves it from its own dependency and passes it in (`pack.ts:electronVersion()
 
 **`files` with `!node_modules/**`.** The renderer and main bundles are the entire package. The
 negation is not redundant: electron-builder collects production dependencies in a pass of its own,
-_outside_ these patterns. Without it, an app that names `@cheshire/app` as a runtime dependency ships
-Vite, TypeScript and electron-builder inside its own asar — measured, during stage 0, at 74 MB
+_outside_ these patterns. An application does name production dependencies — `@cheshire/app`,
+`react`, `react-dom` — so the pass has entries to walk, and without the negation their trees land
+in the asar. Measured during stage 0, when the tooling itself was reachable that way: 74 MB
 versus 396 KB.
 
 **`extraMetadata`.** Sets `main` to the bundled entry, and `desktopName` so Linux desktop
@@ -355,7 +362,7 @@ there, one of the two defences above has broken.
 
 ## Part 4 — `create-cheshire`
 
-`cli/create-cheshire/src/`. Four small files.
+`packages/create-cheshire/src/`. Four small files.
 
 - **`identity.ts:deriveIdentity()`** — `deriveIdentity()` turns one typed word into `name`, `appId` and
   `productName`. The guesses land in `cheshire.config.ts` as ordinary editable values, rather than
@@ -372,7 +379,7 @@ file under a name that survives packing and generation renames it back (`scaffol
 this, every generated repository commits `node_modules`.
 
 **The template ships inside the package.** It lives at the repository root, where it is edited and
-reviewed on its own, and `cli/create-cheshire/scripts/copy-template.mjs` copies it into
+reviewed on its own, and `packages/create-cheshire/scripts/copy-template.mjs` copies it into
 `dist/template` at build time — a published generator has no repository to read from.
 
 **`--registry` is forwarded to the install.** The `pnpm install` a generated application gets is

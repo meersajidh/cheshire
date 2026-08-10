@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CheshireAppError, defineApp, resolveApp } from './views.js'
+import { CheshireAppError, defineApp, resolveApp } from './contributions.js'
 
 function Welcome() {
   return null

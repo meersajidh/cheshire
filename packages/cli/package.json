@@ -1,14 +1,14 @@
 {
-  "name": "@cheshire/app",
+  "name": "@cheshire/cli",
   "version": "0.1.2",
   "type": "module",
-  "description": "The cheshire CLI — dev, build, package — and the application-facing config API",
+  "description": "The cheshire CLI — dev, build, package",
   "license": "MIT",
   "homepage": "https://github.com/meersajidh/cheshire",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/meersajidh/cheshire.git",
-    "directory": "cli/cheshire"
+    "directory": "packages/cli"
   },
   "bugs": "https://github.com/meersajidh/cheshire/issues",
   "keywords": [
@@ -27,20 +27,13 @@
   "bin": {
     "cheshire": "./dist/cli.js"
   },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./package.json": "./package.json"
-  },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist node_modules/.tmp"
   },
   "dependencies": {
     "@cheshire/core": "workspace:^",

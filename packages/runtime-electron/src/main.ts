@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, shell } from 'electron'
-import { resolveConfig, type CheshireConfig, type ResolvedCheshireConfig } from '@cheshire/core'
+import { resolveConfig } from '@cheshire/core/internal'
+import type { CheshireConfig, ResolvedCheshireConfig } from '@cheshire/core'
 
 /**
  * What the generated entry hands to the runtime.
