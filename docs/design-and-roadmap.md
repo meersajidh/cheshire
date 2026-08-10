@@ -125,8 +125,8 @@ The framework code itself, published under the `@cheshire/*` scope:
 ```
 
 Packages are the delivery unit; **systems** (§2) are the unit of meaning, and one system may
-span several packages before it earns a boundary of its own. Package factoring is decided
-case by case as the platform grows — the list above is the current shape, not a cap.
+span several packages. The decomposition is settled rather than provisional, and §7 gives each
+package its responsibilities and whether it is built yet.
 
 ### Template
 
@@ -249,12 +249,21 @@ Packages are the delivery unit; **systems** (§2) are the unit of meaning. One s
 several packages, and one package may serve more than one system — the mapping is noted where
 it is not obvious.
 
-**core** — foundational services: lifecycle, events, logging, configuration, dependency
+**This decomposition is settled.** The list is the shape, decided by the reasoning in each entry
+below. Nothing here is waiting to prove it deserves to exist, and no package has to earn its
+boundary — that would be an evidence gate, which principle 6 rejects. What varies is only whether
+a package has been **built**: a name appears on npm when there is something to install behind it,
+which is a fact about the calendar rather than a verdict about the design.
+
+Marked as in [the application surface](application-surface.md): ✅ built · ◐ in progress ·
+○ planned.
+
+**core** ✅ — foundational services: lifecycle, events, logging, configuration, dependency
 injection. Also the two contracts an application declares against: the config contract on
 the barrel, and the contribution contract on `@cheshire/core/views` — a separate entry so the
 barrel stays React-free for the main process.
 
-**react** — how an application reaches a service: **one typed hook per service**, from this
+**react** ○ phase 2 — how an application reaches a service: **one typed hook per service**, from this
 package. `useCommands()`, `useSettings()`, `useTheme()`. No service ids, no registry, no
 provider to learn — autocomplete finds the surface and a missing provider is a type error.
 Both prior attempts used a service locator (`useService(CommandServiceId)`) over ~30 services;
@@ -262,7 +271,7 @@ cheshire has an order of magnitude fewer, so the indirection buys nothing and co
 hop. This is the _service_-facing API surface, deliberately not the component-facing one —
 that is `ui`.
 
-**ui** — **the design system.** Accessible primitives (shadcn-derived, vendored and shipped
+**ui** ○ phase 2–3 — **the design system.** Accessible primitives (shadcn-derived, vendored and shipped
 built), cheshire's own primitives (`Icon` and its registry, `ResizeHandle`), `cn`, and the design
 token contract. **Two token layers and deliberately not three:** the shadcn CSS-var contract as
 real `:root` / `.dark` custom properties, plus an extension layer for what the contract has no
@@ -271,51 +280,50 @@ purpose:** cheshire ships the token _contract_ and a neutral default, never a vi
 application supplies its own CSS-var block. A palette that lands application-shaped stays that
 way.
 
-**shell** — **the shell system**, and the root of the renderer. Its anatomy is three vertical
+**shell** ✅ — **the shell system**, and the root of the renderer. Its anatomy is three vertical
 zones — a **title bar** (window controls, product name, quick toggles), the **body**, and a
 **status bar** — plus an overlay plane above all three for notifications, dialogs and toasts.
 The body holds the regions: activity bar, primary and auxiliary side bars, editor area, panel.
 **Which regions exist is not fixed** — a template may have no activity bar and no panel at all;
 that is the layout service's call, not the shell's.
 
-**layout** — the shell system's layout service, large enough for its own package: which regions
+**layout** ○ phase 2 — the shell system's layout service, large enough for its own package: which regions
 exist, their visibility and sizes, docking, split views, and persistence across restarts.
 
-**commands** — **the command system.** Command registry, keyboard shortcuts, menus and context
+**commands** ◐ stage 2b — **the command system.** Command registry, keyboard shortcuts, menus and context
 menus, the command palette, and the keyboard-shortcuts editor. Menus belong here rather than in
 the shell because **a menu item is a command reference** — it resolves its title, its shortcut
-and its enablement from the registry, and never holds a handler. Lives as internal modules
-inside `shell` until it earns the package boundary.
+and its enablement from the registry, and never holds a handler.
 
-**customization** — **the customization system**: everything the _user_ can change, over
+**customization** ○ phase 3 — **the customization system**: everything the _user_ can change, over
 everything the _developer_ declared. It does not own the other systems' defaults — it
 **aggregates** them. The command system owns the keybinding registry and an application's
 default shortcuts; customization owns the user's overrides to them, the single persistence
 layer they share, and the editor UI. Same for theme selection and region sizes. One precedence
 rule for all of it: **user > application default > platform default.**
 
-**storage** — **the storage system**: a `db` service (schema, migrations, queries,
+**storage** ○ phase 3 — **the storage system**: a `db` service (schema, migrations, queries,
 transactions) and a `blob` service (large binary content addressed by id, off the record path).
 Host-side. A template may switch on either, both, or neither.
 
-**identity** — **the identity system**: an `auth` service (sessions, sign-in, providers) and a
+**identity** ○ phase 3 — **the identity system**: an `auth` service (sessions, sign-in, providers) and a
 `credentials` service (OS keychain, secrets at rest). Separate from storage because a keychain
 is storage-_shaped_ but identity-_purposed_: an application that wants sign-in and no database
 should not have to declare storage to get it.
 
-**devtools** — **the devtools system**, in two halves that must not be confused. **Diagnostics
+**devtools** ○ planned — **the devtools system**, in two halves that must not be confused. **Diagnostics
 ships**: logging, crash capture, and a log viewer — a user's bug report is worthless without
 them. **Developer tooling does not**: the component gallery, a contribution inspector, the
 Electron devtools shortcut. The split is a build gate, not a convention; the same class of
 mistake as `--no-sandbox` reaching a packaged build.
 
-**runtime** — runtime-specific implementations, `runtime/electron` first: window creation,
+**runtime** ✅ — runtime-specific implementations, `runtime/electron` first: window creation,
 native dialogs, native menus, auto-update. Safe renderer–main IPC is an internal detail
 here, not a package. Applications never import this directly (principle 4).
 
-**host** — the application's own backend process and the channel cheshire brokers to it. Not
-built; see [the application surface](application-surface.md) §4 for why it is a third
-process rather than code in main.
+**host** ○ phase 3 — the application's own backend process and the channel cheshire brokers to it.
+See [the application surface](application-surface.md) §4 for why it is a third process rather
+than code in main.
 
 ## 8. The generated application
 
