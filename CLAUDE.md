@@ -203,9 +203,23 @@ and never implements one. **`workbench` is now a template name only** — the pa
 
 ## Gates
 
-Established in stage 0. Target: a single `pnpm check` (lint + compile + test) as the full
-gate, plus the proof gate above at milestone boundaries. Currently: lint, 5 builds, 5
-typechecks, 29 tests.
+Established in stage 0. `pnpm check` is the full gate, plus the proof gate above at milestone
+boundaries. Currently: lint · 6 builds · 6 typechecks · 29 tests · 43 cites · 6 packages placed ·
+21 manifest paths. Run it rather than trusting these numbers — they go stale, the gate does not.
+
+Three of those are scripts, and each exists because something silent got through:
+
+- **`check-cites.mjs`** — every `path:symbol` cite resolves, and ambiguity is an error rather than
+  a guess. Line-number cites rot on any edit above them and nothing can check them.
+- **`check-layout.mjs`** — a package's directory basename is its name minus scope. `cli/cheshire`
+  published as `@cheshire/app` for months; a directory name reaches no consumer, only a reader.
+- **`check-dist.mjs`** — every `bin` and `exports` target a manifest promises exists on disk. It
+  also runs inside `registry:publish`, the last point before artifacts leave. Written after a
+  package shipped with a `bin` pointing at a file `tsc -b` never emitted, while **every other
+  gate was green** — none of them look inside `dist/`, and `pnpm publish` packs rather than builds.
+
+**No gate sees prose.** Stale diagrams, evidence-gating language, and comments that went false
+while staying put have each been found by reading and never by a gate.
 
 A generated app's window is inspected with **`agent-browser`** (`agent-browser connect 9333`
 while `cheshire dev` runs — the CLI already passes `--remote-debugging-port`). Prefer it to a

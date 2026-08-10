@@ -168,9 +168,37 @@ The alternative — keeping the entry inside the framework package and reaching 
 virtual module specifiers — was rejected. It forces the framework to ship its source, and the app
 ends up holding both source and built output with nothing deciding which its imports resolve to.
 Writing a few files into the app is the cheaper half of that trade, and it buys one thing
-outright: because the importer physically lives in the app's directory, `@cheshire/shell` and
-`react` resolve by name from the app's own `node_modules`. Nothing has to be aliased into
-existence.
+outright: because the importer physically lives in the app's directory, `@cheshire/shell`,
+`@cheshire/runtime-electron` and `react` resolve by name from the app's own `node_modules`.
+Nothing has to be aliased into existence.
+
+Only `react` is the application's own declaration. The two framework packages are dependencies of
+**`@cheshire/cli`**, hoisted flat into the app's `node_modules` — which is the honest arrangement,
+because the CLI is what emits those import statements and so is what must guarantee they resolve.
+An application declares `@cheshire/app` and `@cheshire/cli` and nothing else of cheshire's; it
+never names a package it does not import.
+
+**That "hoisted flat" is `nodeLinker: hoisted` in the generated `pnpm-workspace.yaml`, and this is
+its second load-bearing reason.** The first is packaging: pnpm's default isolated linker uses
+Windows junctions that electron-builder does not follow when collecting binaries. The second is
+this one — under the isolated linker, `@cheshire/cli`'s dependencies sit behind `.pnpm/` and are
+reachable only through `@cheshire/cli/node_modules`, where a file in `.cheshire/` cannot see them.
+
+**Measured against two installs of the same generated application, one line apart:**
+
+| | `hoisted` | `isolated` |
+| --- | --- | --- |
+| `node_modules/@cheshire/` | `app cli core runtime-electron shell`, real directories | `app cli` only, symlinks into `.pnpm/` |
+| `node_modules/.pnpm/` | absent | present |
+| `pnpm install` | succeeds | **succeeds** — nothing in the manifest names shell |
+| `pnpm build` | 396.67 kB renderer | `error TS2307: Cannot find module '@cheshire/shell'` |
+
+The install succeeding on both sides is the part worth noticing: the manifest is satisfiable
+either way, so nothing at install time indicates a problem.
+
+The failure modes are asymmetric, and the packaging one is the quieter half: it fails late, at
+packaging, on Windows only. Resolution fails on the first build, on every platform — and the error
+names a package the application never declared, with nothing to suggest a linker is involved.
 
 Three details in the generated tsconfig are load-bearing, and each was paid for once:
 

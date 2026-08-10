@@ -114,7 +114,33 @@ playground lives in its own.
 
 ### Packages
 
-The framework code itself, published under the `@cheshire/*` scope:
+The framework code itself, published under the `@cheshire/*` scope. **Three groups, and the
+difference between them is the point** — a package list that reads uniformly invites a developer
+to shop through it, which is the effort principle 1 exists to remove.
+
+**What an application imports — one name, and only one:**
+
+```
+@cheshire/app
+```
+
+`@cheshire/app` is the application's whole surface onto cheshire: what it declares, and how it
+reaches services. An application imports that name and no other `@cheshire/*` package, ever.
+Renderer-side API arrives on its entries as the systems land — `@cheshire/app/react` for hooks,
+`@cheshire/app/ui` for components.
+
+**What an application installs but never imports:**
+
+```
+create-cheshire       @cheshire/cli
+```
+
+`create-cheshire` is run once, by `pnpm create cheshire`, and is not a dependency afterwards.
+`@cheshire/cli` supplies the `cheshire` command and exports nothing at all; it is a
+devDependency an application depends on for a verb, never for a symbol.
+
+**The framework's internal factoring — real packages with real boundaries, named by no
+application:**
 
 ```
 @cheshire/core        @cheshire/react          @cheshire/ui
@@ -124,9 +150,29 @@ The framework code itself, published under the `@cheshire/*` scope:
 @cheshire/host
 ```
 
+These are how the framework divides its own work, not vocabulary an application learns. The
+alternative — a mature application declaring six `@cheshire/*` dependencies and having to know
+which one holds `useSettings()` — is what a library asks of its user, and cheshire is a framework
+(principle 2). Frameworks with a socket model present one surface: `next/link`, `$app/*`,
+`astro:*`. Nobody imports `@next/link`.
+
+That is a statement about **who may name a package**, not about how the code is split. The
+decomposition below is settled either way.
+
 Packages are the delivery unit; **systems** (§2) are the unit of meaning, and one system may
-span several packages. The decomposition is settled rather than provisional, and §7 gives each
-package its responsibilities and whether it is built yet.
+span several packages. §7 gives each package its responsibilities and whether it is built yet.
+
+**How the single surface stays complete without a forwarding list to maintain.**
+`@cheshire/app` is `export *` from each system package's public entry, which makes it complete by
+construction — a symbol added upstream cannot go silently missing downstream. That is safe
+because entries divide by audience: **a package's public entry is exactly its application-facing
+API**, and framework-internal API lives on a matching `internal` entry that nothing app-facing
+forwards. So "what is public" is decided where the API lives, by whoever writes it, rather than
+in a list in another package that drifts.
+
+Crossing that is a second division, by runtime environment: a barrel that the main process
+imports must stay React-free, so React-touching API sits on its own entry. `@cheshire/core` shows
+both axes at once — `.` and `./internal` are React-free, `./views` and `./views/internal` are not.
 
 ### Template
 
@@ -190,11 +236,28 @@ and is not a snapshot of any one playground app.
    `packageManager` so corepack agrees.
 
    Two settings in the generated `pnpm-workspace.yaml` follow from that choice rather than from
-   Electron. `nodeLinker: hoisted`, because pnpm's default isolated linker uses Windows junctions
-   that electron-builder does not follow when collecting binaries. `allowBuilds: { electron: true }`,
-   because pnpm 10+ gates a dependency's install scripts. npm and yarn need neither — they hoist
-   by default and run install scripts by default. Both settings give pnpm the behaviour cheshire
-   needs; neither compensates for something the other tools lack.
+   Electron. `nodeLinker: hoisted`, and `allowBuilds: { electron: true }` because pnpm 10+ gates a
+   dependency's install scripts. npm and yarn need neither — they hoist by default and run install
+   scripts by default. Both settings give pnpm the behaviour cheshire needs; neither compensates
+   for something the other tools lack.
+
+   **`hoisted` carries two independent reasons, and only one of them is about Windows.** The
+   isolated linker uses junctions that electron-builder does not follow when collecting binaries,
+   so a packaged app ships incomplete. It also nests a dependency's dependencies out of sight —
+   and `cheshire dev` writes files into `.cheshire/` that import `@cheshire/shell` and
+   `@cheshire/runtime-electron` by name. Those belong to `@cheshire/cli`, which emits the imports
+   and therefore declares them; they resolve only because `hoisted` puts every package flat in the
+   application's own `node_modules`.
+
+   Measured by installing one generated application both ways: under `isolated`,
+   `node_modules/@cheshire/` holds only the two packages the manifest declares, the install still
+   **succeeds**, and the build stops at `error TS2307: Cannot find module '@cheshire/shell'`.
+
+   The second reason is the one worth stating first, because the failures are asymmetric: the
+   packaging one is late and Windows-only, while the resolution one fails on the first build, on
+   every platform, naming a package the application never declared and saying nothing about
+   linkers. Documented as a packaging workaround alone, this setting reads as removable to anyone
+   developing on Linux.
 
    Missing pnpm is a clear refusal naming the fix, with the application still generated — never a
    silent npm install that ignores the linker and fails later at packaging.
@@ -269,20 +332,43 @@ which is a fact about the calendar rather than a verdict about the design.
 Marked as in [the application surface](application-surface.md): ✅ built · ◐ in progress ·
 ○ planned.
 
-**core** ✅ — foundational services: lifecycle, events, logging, configuration, dependency
-injection. Also the two contracts an application declares against: the config contract on
-the barrel, and the contribution contract on `@cheshire/core/views` — a separate entry so the
-barrel stays React-free for the main process.
+The first two entries are the only packages an application names. **Everything after them is
+internal factoring** — §5 draws that line and it is not restated at each entry.
 
-**react** ○ phase 2 — how an application reaches a service: **one typed hook per service**, from this
-package. `useCommands()`, `useSettings()`, `useTheme()`. No service ids, no registry, no
+**app** ✅ — **the application's whole surface onto cheshire**, and the only `@cheshire/*` package
+an application imports. It is `export *` from each system package's public entry rather than a
+curated list, so it cannot drift out of date with what those packages expose. It carries no
+toolchain: its one dependency today is `core`, and it gains each system package as that system
+lands. Its entries follow the systems — `.` for declarations, `/react` for hooks, `/ui` for
+components — which is what keeps the barrel React-free for the process that evaluates
+`cheshire.config.ts`.
+
+**cli** ✅ — the `cheshire` command: `dev`, `build`, `package`. It **exports nothing**; an
+application depends on it for a verb, never for a symbol, which is why it is a devDependency
+while `app` is a dependency. It owns the generated entry files, the Vite configuration for both
+processes, and the electron-builder invocation — none of which an application authors
+(principle 2).
+
+**core** ✅ — foundational services: lifecycle, events, logging, configuration, dependency
+injection. Also the two contracts an application declares against: the config contract and the
+contribution contract. Its four entries show both axes of the entry rule at once — `.` and
+`./internal` stay React-free because the main process imports them, while `./views` and
+`./views/internal` carry the contribution contract, which names React. On each axis the public
+half is what an application may declare against and the `internal` half is the framework's:
+`defineConfig` and `defineApp` are public, `resolveConfig` and `resolveApp` are not.
+
+**react** ○ phase 2 — how an application reaches a service: **one typed hook per service**.
+`useCommands()`, `useSettings()`, `useTheme()`. The hooks are written here and an application
+imports them from `@cheshire/app/react`; the package name is where they live, not where they are
+reached. No service ids, no registry, no
 provider to learn — autocomplete finds the surface and a missing provider is a type error.
 Both prior attempts used a service locator (`useService(CommandServiceId)`) over ~30 services;
 cheshire has an order of magnitude fewer, so the indirection buys nothing and costs every reader a
 hop. This is the _service_-facing API surface, deliberately not the component-facing one —
 that is `ui`.
 
-**ui** ○ phase 2–3 — **the design system.** Accessible primitives (shadcn-derived, vendored and shipped
+**ui** ○ phase 2–3 — **the design system**, reached by an application as `@cheshire/app/ui`.
+Accessible primitives (shadcn-derived, vendored and shipped
 built), cheshire's own primitives (`Icon` and its registry, `ResizeHandle`), `cn`, and the design
 token contract. **Two token layers and deliberately not three:** the shadcn CSS-var contract as
 real `:root` / `.dark` custom properties, plus an extension layer for what the contract has no
@@ -521,8 +607,13 @@ Sliced so every stage ends with something that runs (principle 6):
 | ----- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0     | Create → dev → build | `pnpm create cheshire demo` generates an app with `cheshire.config.ts`; `pnpm dev` opens the workbench shell; `pnpm build` produces a runnable package — cheshire consumed **from a real install** from the very first run. |
 | 1     | Views                | The app contributes a view; it renders in the workbench.                                                                                                                                                                    |
-| 2     | Commands & menus     | The app's command appears in the menu and on a shortcut, and opens the view.                                                                                                                                                |
+| 2a    | Window & membrane    | Frameless window, preload membrane, CSP, window controls, cheshire's own title bar. Nothing of the app's changes; the window it runs in becomes cheshire's.                                                                  |
+| 2b    | Commands & menus     | The app's command appears in the menu and on a shortcut, and opens the view.                                                                                                                                                |
 | 3     | Layout persistence   | The app restarts with its layout preserved. Milestone A complete.                                                                                                                                                           |
+
+Stage 2 splits because `frame: false` means cheshire draws the window controls, so the preload
+membrane lands in **2a whatever is decided about menus** — it is not conditional on 2b. The plan
+is `.local/plans/stage-2.md`.
 
 ## 14. Final mental model
 
@@ -530,10 +621,14 @@ Sliced so every stage ends with something that runs (principle 6):
                      Framework Repository (cheshire)
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
-│  packages/         templates/         cli/              │
-│  ├── core          workbench          create-cheshire      │
-│  ├── react         (chat)             cheshire             │
-│  ├── ui            (community)           │              │
+│  packages/                            templates/        │
+│  ├── app  ◀── the only one an app     workbench         │
+│  │           imports                  (chat)            │
+│  ├── cli  ◀── the `cheshire` command  (community)       │
+│  ├── create-cheshire                     │              │
+│  ├── core                                │              │
+│  ├── react                               │              │
+│  ├── ui                                  │              │
 │  ├── shell                               │              │
 │  ├── layout                              │              │
 │  ├── commands                            │              │
@@ -541,7 +636,7 @@ Sliced so every stage ends with something that runs (principle 6):
 │  ├── storage                             │              │
 │  ├── identity                            │              │
 │  ├── devtools                            │              │
-│  ├── runtime                             │              │
+│  ├── runtime-electron                    │              │
 │  └── host                                │              │
 └──────────────────────────────────────────┼──────────────┘
                                            │
@@ -560,7 +655,7 @@ Sliced so every stage ends with something that runs (principle 6):
 │  └── features/  menus/           │   │  dogfoods the framework          │
 │  cheshire.config.ts                 │   │                                  │
 │                                  │   │                                  │
-│  depends on @cheshire/* packages    │   │  depends on @cheshire/* packages    │
+│  imports @cheshire/app, only     │   │  imports @cheshire/app, only     │
 └──────────────────────────────────┘   └──────────────────────────────────┘
 ```
 

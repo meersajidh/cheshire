@@ -16,7 +16,6 @@
   },
   "devDependencies": {
     "@cheshire/cli": "{{cheshireVersion}}",
-    "@cheshire/shell": "{{cheshireVersion}}",
     "@types/react": "{{reactTypesVersion}}"
   }
 }

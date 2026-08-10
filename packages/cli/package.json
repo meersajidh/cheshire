@@ -38,6 +38,7 @@
   "dependencies": {
     "@cheshire/core": "workspace:^",
     "@cheshire/runtime-electron": "workspace:^",
+    "@cheshire/shell": "workspace:^",
     "@vitejs/plugin-react": "catalog:",
     "electron": "catalog:",
     "electron-builder": "catalog:",

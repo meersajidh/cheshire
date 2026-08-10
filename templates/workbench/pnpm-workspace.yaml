@@ -1,7 +1,29 @@
 # Flat, real-dir node_modules — not pnpm's default isolated/symlinked linker.
-# The isolated linker uses junctions on Windows, which electron-builder does not
-# follow when collecting binaries: the packaged app ships incomplete and crashes
-# on launch. Keep this setting.
+#
+# TWO independent reasons, and knowing only the first is how this gets removed.
+#
+# 1. Packaging. The isolated linker uses junctions on Windows, which
+#    electron-builder does not follow when collecting binaries: the packaged app
+#    ships incomplete and crashes on launch.
+#
+# 2. Resolution, and this one bites first. cheshire generates files into
+#    `.cheshire/` that import `@cheshire/shell` and `@cheshire/runtime-electron`
+#    by name. Those are dependencies of `@cheshire/cli`, not of this app — the
+#    CLI emits the imports, so the CLI declares them. They resolve only because
+#    `hoisted` puts every package flat in this app's own `node_modules`.
+#
+#    Measured, not assumed. Flipping this one line to `isolated` and
+#    reinstalling leaves `node_modules/@cheshire/` holding only `app` and `cli`
+#    — the two this manifest declares — as symlinks into `.pnpm/`, and the build
+#    stops at:
+#
+#      .cheshire/renderer.tsx(2,28): error TS2307: Cannot find module
+#      '@cheshire/shell' or its corresponding type declarations.
+#
+# Note the asymmetry before deciding this looks like a Windows workaround:
+# reason 1 fails late, at packaging, on one platform. Reason 2 fails on the
+# first build, on every platform — and the error names a package this app never
+# declared, with nothing to suggest a linker is involved.
 nodeLinker: hoisted
 
 # pnpm 10+ refuses to run a dependency's install scripts unless it is named here.
