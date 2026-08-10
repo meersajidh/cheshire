@@ -65,7 +65,7 @@ pnpm registry:publish          # framework repo: build → stamp → publish all
 rewrites the specifier as an exact pin, so it works once and is a silent no-op forever after —
 measured, and it cost a debugging session. `--latest` follows the `latest` dist-tag, which every
 publish moves. `create-cheshire --registry` also writes `.npmrc` into the generated app
-(`cli.ts:pinRegistry`); without it every later command in that app resolves from npmjs.org and
+(`create-cheshire/src/cli.ts:pinRegistry()`); without it every later command in that app resolves from npmjs.org and
 fails naming a version that only exists locally.
 
 **`registry:publish` stamps `<next patch>-dev.<timestamp>` every time, and that is what makes
@@ -75,7 +75,7 @@ corrupts `_attachments` while rejecting (verdaccio#874); pnpm ≥10.34 makes a l
 mismatch a hard failure that neither `--force` nor `pnpm update` will bypass — only
 `--update-checksums`, which is a supply-chain guard, not a dev loop. A fresh version has no
 conflict, correct integrity, and is admitted by the caret range `create-cheshire` stamps into the
-generated app (`cli.ts:76`), since every dev publish is a higher prerelease of the same patch.
+generated app (`create-cheshire/src/cli.ts:versions()`), since every dev publish is a higher prerelease of the same patch.
 
 **Consumers live outside this repository**, under `~/Repos/msh/play-cheshire/` — see the gate
 invariant below. Nothing under `.local/` is a consumer any more.

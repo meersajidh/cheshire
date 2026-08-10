@@ -35,6 +35,7 @@ The platform provides, so the application never has to:
 - Runtime integration (Electron first)
 - UI framework (React first)
 - TypeScript and Vite, fully configured
+- Package management (pnpm), pinned via `packageManager`
 - Build, packaging, and distribution configuration
 
 **Systems** — coherent capabilities an application _declares into_, never implements. Each is
@@ -82,7 +83,7 @@ The most important structural fact (principle 5): cheshire is **two products**.
              ┌───────────┴────────────┐
              ▼                        ▼
      Framework Product        Generated Application
-     (repo: cheshire)            (the customer's repo)
+     (repo: cheshire)         (the customer's repo)
 ```
 
 - The **framework product** is what framework developers maintain: packages, template,
@@ -108,7 +109,7 @@ playground lives in its own.
      ┌───────────┬───────┴──────┬────────────────┐
      ▼           ▼              ▼                ▼
   Packages    Template         CLI          Playground
-  (cheshire)     (cheshire)         (cheshire)       (play-cheshire)
+ (cheshire)  (cheshire)     (cheshire)    (play-cheshire)
 ```
 
 ### Packages
@@ -129,9 +130,9 @@ case by case as the platform grows — the list above is the current shape, not 
 
 ### Template
 
-A template is an **opinionated blueprint: a configuration of the systems cheshire encapsulates**,
+A template is an **opinionated blueprint: a specific configuration of the systems cheshire encapsulates**,
 plus the contributions and labels that suit a shape of application. `create-cheshire` materialises
-one into a generated app.
+the default template into a generated app.
 
 `workbench` — VS Code-like — is the first and currently only template. The named next shapes
 are `chat` (Slack-like) and `community` (Discord-like). Templates differ in **which systems are
@@ -181,14 +182,22 @@ and is not a snapshot of any one playground app.
 ### CLI — two responsibilities, two tools
 
 1. **`create-cheshire`** (invoked as `npm create cheshire`) — project generation only: ask the
-   project name, copy the template, replace placeholders, install dependencies, `git init`,
-   print next steps. Nothing more.
+   project name, copy the template, replace placeholders, install dependencies, `git init`, print next steps. Nothing more.  
+   **cheshire chooses pnpm, the way it chooses Electron, React and Vite.** One package manager
+   means one lockfile format and one resolution algorithm behind every generated application,
+   which is what makes a support conversation reproducible. `create-cheshire` installs with pnpm
+   regardless of what invoked the generator, and the generated manifest pins the version in
+   `packageManager` so corepack agrees.
 
-   **A generated application requires pnpm**, and `create-cheshire` installs with it regardless of
-   what invoked the generator. `pnpm-workspace.yaml` carries `nodeLinker: hoisted`, which npm and
-   yarn have no equivalent for and which electron-builder needs to package correctly on Windows;
-   the generated manifest pins the version in `packageManager` so corepack agrees. Missing pnpm is
-   a clear refusal naming the fix, with the application still generated — never a registry 404.
+   Two settings in the generated `pnpm-workspace.yaml` follow from that choice rather than from
+   Electron. `nodeLinker: hoisted`, because pnpm's default isolated linker uses Windows junctions
+   that electron-builder does not follow when collecting binaries. `allowBuilds: { electron: true }`,
+   because pnpm 10+ gates a dependency's install scripts. npm and yarn need neither — they hoist
+   by default and run install scripts by default. Both settings give pnpm the behaviour cheshire
+   needs; neither compensates for something the other tools lack.
+
+   Missing pnpm is a clear refusal naming the fix, with the application still generated — never a
+   silent npm install that ignores the linker and fails later at packaging.
 
 2. **`@cheshire/app`** — the framework tooling an application uses day to day: `dev`, `build`,
    `package`. Owned and shipped by the framework, so application authors never configure
@@ -199,9 +208,7 @@ Tooling is part of the framework. The generated application's `package.json` scr
 
 ### Playground — external repository `play-cheshire`
 
-Development application(s) whose purpose is to dogfood the framework. Nothing seriously
-domain-specific; it exercises menus, docking, the command palette, theming — the platform
-surface itself.
+Development application(s) whose purpose is to dogfood the framework. Mostly mocking some domain; it exercises menus, docking, the command palette, theming — the platform surface itself.
 
 **It installs cheshire from the local registry — exactly what a real developer gets. Never a
 workspace link**: links resolve source paths and hide packaging failures. That rule, and the
@@ -214,17 +221,15 @@ Framework repository:
 ```
 cheshire/
 ├── packages/
-│   ├── core/
-│   ├── react/
-│   ├── commands/
-│   ├── layout/
-│   ├── workbench/
-│   ├── settings/
+│   ├── core/             @cheshire/core
+│   ├── shell/            @cheshire/shell
 │   └── runtime/
-│       └── electron/
+│       └── electron/     @cheshire/runtime-electron
+├── cli/
+│   ├── cheshire/         @cheshire/app — the `cheshire` bin and the app-facing module surface
+│   └── create-cheshire/  create-cheshire
 ├── templates/
-│   └── workbench/
-├── cli/                  # create-cheshire + cheshire tooling
+│   └── workbench/        a blueprint, deliberately not a workspace package
 ├── docs/
 ├── scripts/
 ├── package.json
@@ -349,8 +354,6 @@ Exercise it in the playground  (play-cheshire, installed from the local registry
    ▼
 Improve the API — repeat
    ▼
-Promote: polish into the template
-   ▼
 Publish packages
    ▼
 Release CLI
@@ -384,20 +387,20 @@ compatible, tested set of `@cheshire/*` versions — a generated app never start
 mismatched matrix.
 
 **All five packages move together.** They cross-reference with `workspace:^`, and
-`create-cheshire` stamps *its own* version into the application it generates (`cli.ts:76`). A
+`create-cheshire` stamps _its own_ version into the application it generates (`create-cheshire/src/cli.ts:versions()`). A
 release where one package lags is a generated application asking for a version that does not
 exist.
 
 There are two publishes, and they are not variations of one thing:
 
-|  | **Development** | **Release** |
-| --- | --- | --- |
-| Command | `pnpm registry:publish` | `pnpm -r publish` |
-| Target | local Verdaccio, `http://localhost:4873` | npmjs.org |
-| Version | `<next patch>-dev.<timestamp>`, stamped per publish | the real version in the manifests |
-| Permanence | disposable — `registry:reset` forgets everything | permanent; 72-hour unpublish window, then the number is burned |
-| Builds first | yes | **no** |
-| How often | every iteration | at a milestone |
+|              | **Development**                                     | **Release**                                                    |
+| ------------ | --------------------------------------------------- | -------------------------------------------------------------- |
+| Command      | `pnpm registry:publish`                             | `pnpm -r publish`                                              |
+| Target       | local Verdaccio, `http://localhost:4873`            | npmjs.org                                                      |
+| Version      | `<next patch>-dev.<timestamp>`, stamped per publish | the real version in the manifests                              |
+| Permanence   | disposable — `registry:reset` forgets everything    | permanent; 72-hour unpublish window, then the number is burned |
+| Builds first | yes                                                 | **no**                                                         |
+| How often    | every iteration                                     | at a milestone                                                 |
 
 ### Development — `pnpm registry:publish`
 
@@ -427,7 +430,7 @@ pnpm -r build       # not optional — publish will not do it
 pnpm -r publish
 ```
 
-The proof gate runs *before* this, against the local registry, not against npm: the point of a
+The proof gate runs _before_ this, against the local registry, not against npm: the point of a
 dev registry is that the shipping path is exercised without spending a version number to find
 out it was wrong.
 
@@ -446,8 +449,10 @@ A first-class strategic objective (principle 4), executed in two moves:
 
 ```
         Application
+            │
             ▼
    cheshire runtime API          ◀── defined and hardened in Phase 4
+            │
             ▼
   Electron │ Tauri │ future
 ```
@@ -493,12 +498,12 @@ pnpm build produces a runnable package.
 
 Sliced so every stage ends with something that runs (principle 6):
 
-| Stage | Slice                | Exit condition (runs, and is run)                                                                                                                                                                             |
-| ----- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Stage | Slice                | Exit condition (runs, and is run)                                                                                                                                                                                           |
+| ----- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0     | Create → dev → build | `pnpm create cheshire demo` generates an app with `cheshire.config.ts`; `pnpm dev` opens the workbench shell; `pnpm build` produces a runnable package — cheshire consumed **from a real install** from the very first run. |
-| 1     | Views                | The app contributes a view; it renders in the workbench.                                                                                                                                                      |
-| 2     | Commands & menus     | The app's command appears in the menu and on a shortcut, and opens the view.                                                                                                                                  |
-| 3     | Layout persistence   | The app restarts with its layout preserved. Milestone A complete.                                                                                                                                             |
+| 1     | Views                | The app contributes a view; it renders in the workbench.                                                                                                                                                                    |
+| 2     | Commands & menus     | The app's command appears in the menu and on a shortcut, and opens the view.                                                                                                                                                |
+| 3     | Layout persistence   | The app restarts with its layout preserved. Milestone A complete.                                                                                                                                                           |
 
 ## 14. Final mental model
 
@@ -544,22 +549,22 @@ Sliced so every stage ends with something that runs (principle 6):
 
 ## Appendix — names
 
-| Thing                   | Name                                                       |
-| ----------------------- | ---------------------------------------------------------- |
-| Framework / repo        | `cheshire`                                                    |
-| npm scope               | `@cheshire/*`                                                 |
-| Create package          | `create-cheshire` (`npm create cheshire`)                        |
-| Tooling CLI             | `@cheshire/app` — installs the `cheshire` command             |
-| Application facade      | `@cheshire/app` — the only package an application imports  |
-| Config contract         | `cheshire.config.ts` — `defineConfig({ ... })`                |
-| Contribution contract   | `src/index.ts` — default-exports `defineApp({ views })`    |
-| Contribution entry      | `@cheshire/core/views`, re-exported through `@cheshire/app`   |
-| Playground repo         | `play-cheshire`                                               |
-| Design system           | `@cheshire/ui`                                                |
-| Command system          | `@cheshire/commands` (internal to `shell` until extracted)    |
-| Shell system            | `@cheshire/shell` + `@cheshire/layout`                           |
-| The shell's three zones | title bar · **body** · status bar                          |
-| Templates               | `workbench` (built) · `chat`, `community` (named, unbuilt) |
+| Thing                   | Name                                                        |
+| ----------------------- | ----------------------------------------------------------- |
+| Framework / repo        | `cheshire`                                                  |
+| npm scope               | `@cheshire/*`                                               |
+| Create package          | `create-cheshire` (`npm create cheshire`)                   |
+| Tooling CLI             | `@cheshire/app` — installs the `cheshire` command           |
+| Application facade      | `@cheshire/app` — the only package an application imports   |
+| Config contract         | `cheshire.config.ts` — `defineConfig({ ... })`              |
+| Contribution contract   | `src/index.ts` — default-exports `defineApp({ views })`     |
+| Contribution entry      | `@cheshire/core/views`, re-exported through `@cheshire/app` |
+| Playground repo         | `play-cheshire`                                             |
+| Design system           | `@cheshire/ui`                                              |
+| Command system          | `@cheshire/commands` (internal to `shell` until extracted)  |
+| Shell system            | `@cheshire/shell` + `@cheshire/layout`                      |
+| The shell's three zones | title bar · **body** · status bar                           |
+| Templates               | `workbench` (built) · `chat`, `community` (named, unbuilt)  |
 
 npm registry status (checked 2026-08-06): the `@cheshire` org is **created and owned**, so the
 scope reserves every package on the roadmap. Unscoped `cheshire` is taken by an unrelated,

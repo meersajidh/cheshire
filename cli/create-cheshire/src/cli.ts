@@ -74,8 +74,14 @@ function templateDir(): string {
  * It is also what makes the local-registry loop work. `registry:publish` stamps
  * `<next patch>-dev.<timestamp>`, so a generator installed from that registry
  * writes `^<that version>` here — and every later dev publish is a higher
- * prerelease of the same patch, which this range admits. The consumer refreshes
- * with `pnpm update` and nothing rewrites its manifest.
+ * prerelease of the same patch, which this range admits.
+ *
+ * The consumer refreshes with `pnpm update --latest "@cheshire/*"`, and the
+ * `--latest` is not optional. A plain `pnpm update` resolves this range
+ * correctly and then **rewrites the specifier as an exact pin**, so it works
+ * once and is a silent no-op every time after — measured, and it cost a
+ * debugging session. `--latest` follows the `latest` dist-tag instead, which
+ * every dev publish moves.
  */
 function versions(): Versions {
   const manifest = JSON.parse(
