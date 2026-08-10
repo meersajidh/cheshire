@@ -105,13 +105,19 @@ flowchart TD
     OUT["dist/ — packaged application"]
   end
   subgraph FW["cheshire — installed into node_modules"]
-    CORE["@cheshire/core<br/>the config contract"]
+    APPPKG["@cheshire/app<br/>the app's whole surface"]
+    CLI["@cheshire/cli<br/>the cheshire bin: dev · build · package"]
+    CORE["@cheshire/core<br/>the two contracts"]
     WB["@cheshire/shell<br/>the shell, built"]
     RT["@cheshire/runtime-electron<br/>window, lifecycle"]
-    CLI["cheshire<br/>dev · build · package"]
   end
+  CFG -->|imports| APPPKG
+  SRC -->|imports| APPPKG
+  APPPKG -->|export * from| CORE
   CLI -->|reads| CFG
   CLI -->|writes| GEN
+  CLI -.->|declares, so these resolve| WB
+  CLI -.->|declares| RT
   GEN -->|imports| WB
   GEN -->|imports| RT
   GEN -->|imports| SRC

@@ -28,9 +28,20 @@ catalog:
   vitest: ^4.0.0
 
 # Flat, real-dir node_modules — NOT pnpm's default isolated/symlinked linker.
-# The isolated linker uses junctions on Windows, which electron-builder does not
-# follow when collecting native .node files: the packaged app ships without them
-# and crashes on launch. `hoisted` reproduces the flat layout structurally.
+#
+# Here it mirrors the consumer environment and nothing more. Both reasons the
+# setting is load-bearing are about a *generated application*: electron-builder
+# not following Windows junctions when collecting binaries, and generated code
+# in `.cheshire/` resolving `@cheshire/cli`'s dependencies. The template's own
+# `pnpm-workspace.yaml` carries them, measured. This repository packages nothing
+# and generates nothing into itself — the gate lives outside it — so neither
+# applies here.
+#
+# Kept rather than removed because it costs nothing and matching the consumer
+# is worth more than the alternative buys: `isolated` would catch a framework
+# package importing what it does not declare, and there is nothing to catch.
+# The only undeclared imports are `vitest` in test files, declared at the root
+# and resolved by walking up — which `isolated` permits too.
 nodeLinker: hoisted
 
 # pnpm 10+ gates every dependency lifecycle script by default (supply-chain

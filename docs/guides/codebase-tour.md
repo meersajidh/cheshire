@@ -8,9 +8,14 @@
 > assumes [framework-architecture](framework-architecture.md) has been read — that document
 > explains _why_ the shape is this shape; this one shows you the shape.
 >
-> **Status.** Accurate at the close of **stage 1**; pointers refreshed 2026-08-07. The codebase is
-> small on purpose: about 1,650 lines of framework source across five packages. You can read all
-> of it in an afternoon, and this tour is a suggestion for the order.
+> **Status.** Accurate at the close of **stage 1**; refreshed 2026-08-11 after the package split.
+> The codebase is small on purpose: about 1,660 lines of framework source across six packages.
+> You can read all of it in an afternoon, and this tour is a suggestion for the order.
+>
+> Cites are `path:symbol` and carry no line numbers — a line cite rots on any edit above it and
+> nothing can check it, while `scripts/check-cites.mjs` verifies every symbol cite on each
+> `pnpm check`. Resolve them by search: `grep -n "function loadApp"`, `Ctrl-T` in VS Code, `gd`
+> with a language server.
 >
 > **A warning about scale.** cheshire's design documents describe *systems* — a design system, a
 > command system, storage, settings — and almost none of that is code yet. This tour is the honest
@@ -21,7 +26,7 @@
 
 ## How to read it
 
-Open the repository beside this document. Every reference is `path:line`, and every claim is
+Open the repository beside this document. Every reference is `path:symbol`, and every claim is
 something you can check by opening the file. Where the tour says a thing is _not_ built, that is
 also worth checking — the roadmap leaves deliberate gaps, and knowing which gaps are deliberate is
 half of onboarding.
@@ -30,12 +35,20 @@ Two commands before you start:
 
 ```bash
 pnpm install
-pnpm check        # lint + 5 builds + 5 typechecks + 29 tests — the whole gate
+pnpm check        # the whole gate
 ```
 
-`pnpm check` is the gate. If it is green, the framework compiles and its unit tests pass. It does
-**not** tell you the framework installs correctly — only the proof gate does that, and there is a
-section on it at the end.
+`pnpm check` is the gate: lint, build, typecheck, tests, then three scripts —
+`check-cites.mjs` (every `path:symbol` cite resolves), `check-layout.mjs` (a package's directory
+basename is its name minus scope) and `check-dist.mjs` (every `bin` and `exports` target a
+manifest promises exists on disk). Deliberately no counts here; the gate prints its own, and a
+number written down is a number that goes stale.
+
+If it is green, the framework compiles and its unit tests pass. It does **not** tell you the
+framework installs correctly — only the proof gate does that, and there is a section on it at the
+end. That gap is not theoretical: a package once shipped with a `bin` pointing at a file the build
+never emitted, while every gate was green, because none of them looked inside `dist/`.
+`check-dist.mjs` exists because of it.
 
 ---
 
@@ -75,11 +88,23 @@ Split by who runs the code, which is the split that matters when you are looking
 | All three | `@cheshire/core` — types plus four pure functions, on four entries |
 | Nothing — it is a surface, not a stage | `@cheshire/app`, which re-exports core's public entries |
 
-`@cheshire/core` has a second entry, `@cheshire/core/views`, and the split is not cosmetic. It holds the
-contribution contract, which names React's `ComponentType`; the barrel stays React-free because
-`@cheshire/runtime-electron` imports it from Electron's main process. With `skipLibCheck` on, an
-unresolved `react` inside a `.d.ts` silently becomes `any` rather than failing, so the separation
-is the only thing keeping that honest.
+`@cheshire/core`'s four entries are two splits crossed, and neither is cosmetic.
+
+**By runtime environment.** `@cheshire/core/views` holds the contribution contract, which names
+React's `ComponentType`; the barrel stays React-free because `@cheshire/runtime-electron` imports
+it from Electron's main process. With `skipLibCheck` on, an unresolved `react` inside a `.d.ts`
+silently becomes `any` rather than failing, so the separation is the only thing keeping that
+honest.
+
+**By audience.** A public entry is *exactly* the application-facing API; framework-internal API
+sits on a matching `internal` entry. `defineConfig` and `defineApp` are public; `resolveConfig`
+and `resolveApp`, which validate what an application declared, are not — the CLI and the shell
+call those. Crossing the two splits gives `.`, `./internal`, `./views`, `./views/internal`.
+
+That audience split is what lets `@cheshire/app` be two `export *` lines rather than a hand-kept
+list of names. A forwarding list drifts in the one direction nothing catches: a symbol added
+upstream is simply absent downstream, with no error anywhere. Forwarding a whole entry cannot
+drift, and it is safe only because the entry contains nothing an application should not see.
 
 `templates/workbench` is deliberately **not** a workspace package. If it were, its dependencies
 would resolve to framework _source_ through workspace links, and the one artifact meant to prove
@@ -137,10 +162,16 @@ and the whole config contract is the file above it. Note the error messages: `` 
 is missing `appId`. Add it, e.g. `appId: 'com.example.my-app'` `` — field, file and fix in one
 sentence. That is the house style for anything a developer reads.
 
-Its sibling `packages/core/src/views.ts` is the contribution contract, and reads the same way:
-`views.ts:defineApp()` is identity, `views.ts:resolveApp()` validates, and every message it throws names
-`src/index.ts` and the field. `resolveApp` runs in the renderer rather than here — the CLI never
-looks at what an app contributes.
+Its sibling `packages/core/src/contributions.ts` is the contribution contract, and reads the same
+way: `contributions.ts:defineApp()` is identity, `contributions.ts:resolveApp()` validates, and every
+message it throws names `src/index.ts` and the field. `resolveApp` runs in the renderer rather
+than here — the CLI never looks at what an app contributes.
+
+Note the file is `contributions.ts` while the entry is `@cheshire/core/views`. That is deliberate:
+`views.ts` and `views-internal.ts` are thin re-export files that decide **what is public**, and
+the implementation sits behind them. When a module is both the implementation and the entry it
+cannot hide anything — which is how `resolveApp` was reachable from the application surface until
+the audience split.
 
 ### 3. Generating `.cheshire/`
 
@@ -413,7 +444,7 @@ transitive dependency is reachable.
 
 ```bash
 pnpm registry:start                   # verdaccio on :4873, in another terminal
-pnpm registry:publish                 # build, stamp, publish all five
+pnpm registry:publish                 # build, stamp, publish every package
 
 cd ~/Repos/msh/play-cheshire          # anywhere outside this repository
 PNPM_CONFIG_REGISTRY=http://localhost:4873 pnpm create cheshire demo
@@ -440,11 +471,22 @@ One friction: a global `minimumReleaseAge` trips on every local install, because
 published is seconds old. Add the scope to `minimumReleaseAgeExclude`.
 
 **A generated application is pnpm-only, and `create-cheshire` enforces it** — it runs `pnpm install`
-whatever invoked it, and refuses with a message naming the fix if pnpm is absent. Two things make
-that non-negotiable: `pnpm-workspace.yaml` carries `nodeLinker: hoisted`, which npm and yarn have
-no equivalent for and electron-builder needs on Windows, and detecting the caller's package
-manager offered a choice cheshire cannot honour — npm "succeeds" while silently ignoring the
-linker, and the failure surfaces much later, at packaging, on Windows.
+whatever invoked it, and refuses with a message naming the fix if pnpm is absent.
+
+cheshire *chose* pnpm, the way it chose Electron, React and Vite; the settings in a generated
+`pnpm-workspace.yaml` exist to undo pnpm's own defaults rather than to compensate for something
+npm and yarn lack. Both of them hoist by default and run install scripts by default, so they need
+no equivalent of `nodeLinker: hoisted` or `allowBuilds`. What makes the choice non-negotiable
+afterwards is that npm **"succeeds"** while silently ignoring a file it does not read — leaving a
+clean-looking install that packages wrong on Windows.
+
+`nodeLinker: hoisted` is load-bearing twice over, and the second reason bites first. Beyond
+electron-builder not following Windows junctions when collecting binaries, the files cheshire
+generates into `.cheshire/` import `@cheshire/shell` and `@cheshire/runtime-electron` by name.
+Those belong to `@cheshire/cli`, which emits the imports and so declares them; they resolve only
+because `hoisted` puts every package flat in the application's own `node_modules`. Measured by
+installing one generated app both ways — under `isolated` the install still **succeeds** and the
+build stops at `error TS2307: Cannot find module '@cheshire/shell'`.
 
 After that, the loop while you work on the framework is one command on each side:
 

@@ -10,7 +10,7 @@ product.
 
 1. **`docs/principles.md`** — 6 principles, upstream of every decision. A decision that
    contradicts one is wrong, or the principle is amended explicitly first.
-2. **`docs/design-and-roadmap.md`** — structure, packages, the two CLIs, development flow,
+2. **`docs/design-and-roadmap.md`** — structure, packages, the CLIs, development flow,
    roadmap, and Milestone A with its stage slicing (§13). Names live in its appendix.
 3. **`docs/application-surface.md`** — how an application layers on cheshire: the two surfaces
    (Shell and Host), every contribution kind, the platform services and which zone each sits
@@ -18,8 +18,9 @@ product.
    building stage's call. Its §7 is the live list of open decision points.
 
 `docs/guides/` (framework-architecture, codebase-tour) is onboarding material, not source of
-truth — it explains and walks what 1 and 2 decide. It cites `path:line`, so it goes stale;
-refresh it at stage boundaries, and never resolve a disagreement in its favour.
+truth — it explains and walks what 1 and 2 decide. Its `path:symbol` cites are gated; its prose,
+diagrams and counts are not, so it still goes stale. Refresh it at stage boundaries, and never
+resolve a disagreement in its favour.
 
 ## Current position
 
@@ -76,7 +77,7 @@ resolves `create-cheshire` by name, that a transitive dependency is reachable.
 `registry:reset`. One command each side:
 
 ```
-pnpm registry:publish          # framework repo: build → stamp → publish all five
+pnpm registry:publish          # framework repo: build → stamp → publish every package
 (cd <consumer> && pnpm update --latest "@cheshire/*")
 ```
 
@@ -108,7 +109,7 @@ versions resolve cleanly on either side and prove nothing. Mechanics, flags and 
 `minimumReleaseAge` friction: `docs/guides/codebase-tour.md`, "the local registry".
 
 **Vocabulary, settled 2026-08-06.** Capabilities are **systems**, reached through named
-**services** via one typed hook from `@cheshire/react`. An application *declares into* a system
+**services** via one typed hook, reached by an application as `@cheshire/app/react`. An application *declares into* a system
 and never implements one. **`workbench` is now a template name only** — the package is
 `@cheshire/shell`. The full vocabulary, the systems list and the shell's three zones:
 `docs/design-and-roadmap.md` §2 and §7.
@@ -163,7 +164,7 @@ and never implements one. **`workbench` is now a template name only** — the pa
   only. `declarationMap` likewise — it points at a `src/` that never ships.
 - **Packages cross-reference with `workspace:^`**, so a patch to `@cheshire/core` does not
   strand consumers. Generated apps declare a caret range (`^<current>`), never an exact pin:
-  `create-cheshire` stamps its own version, so all five move together or a generated app asks
+  `create-cheshire` stamps its own version, so every package moves together or a generated app asks
   for a version that does not exist. Note `pnpm publish` does **not** build — `dist` is
   whatever was last built.
 - **A reachability check is a bounded TCP probe, never `curl`.** `registry:publish` refuses

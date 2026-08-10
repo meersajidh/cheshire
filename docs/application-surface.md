@@ -34,6 +34,19 @@ packages and never on framework source. cheshire supplies every layer below the 
 the ones the application would otherwise have to assemble: the process model, the build, the
 shell, and the services.
 
+**Every import in this document is from `@cheshire/app`, and that is a rule rather than a
+coincidence.** It is the application's whole surface onto cheshire — declarations on the barrel,
+hooks on `/react`, components on `/ui`, the host entry on `/host` — and an application imports
+that name and no other `@cheshire/*` package, ever. `@cheshire/core`, `@cheshire/react`,
+`@cheshire/ui` and the rest are real packages with the responsibilities design & roadmap §7 gives
+them, but they are the framework's internal factoring, not the application's vocabulary. Sample
+code here that names one of them directly is a defect in this document, not an alternative
+spelling.
+
+The subpaths are entries of one package, the way `next/link` is, and not siblings an application
+assembles — cheshire is a framework rather than a library (principle 2), so it presents one
+surface instead of a set to shop through.
+
 ### An application declares into a system; it never implements one
 
 cheshire's capabilities come as **systems** — coherent, whole, already built (design & roadmap §2).
@@ -57,7 +70,7 @@ persisted against — a call can only be made.
 **A system is reached through its services, and a service through one typed hook.**
 
 ```tsx
-import { useCommands, useSettings } from '@cheshire/react'
+import { useCommands, useSettings } from '@cheshire/app/react'
 
 function Toolbar() {
   const commands = useCommands()
@@ -284,7 +297,7 @@ module; cheshire imports it, wires it, and starts it. Sketch, not a committed AP
 
 ```ts
 // src/host/index.ts — the application's backend, one module
-import { defineHost } from 'cheshire/host'
+import { defineHost } from '@cheshire/app/host'
 
 export default defineHost({
   async start(ctx) {
@@ -308,7 +321,7 @@ const patients = await host.listPatients('smith')
 ## 5. Systems and their services
 
 What cheshire provides, grouped by system, with **which zone** each service runs in. Renderer-side
-services reach an application as one typed hook each, from `@cheshire/react`; host-side services are
+services reach an application as one typed hook each, from `@cheshire/app/react`; host-side services are
 handed to the host entry as a context object. Nothing is reached by importing a runtime module or
 by touching a global.
 
@@ -387,7 +400,8 @@ Surfaced, not decided (principle 6). Each is hard to reverse and belongs to the 
 | Term | Meaning |
 | --- | --- |
 | **system** | A coherent capability cheshire ships whole — design, command, shell, customization, storage, identity, devtools. An application declares into one, through its services; it never implements one. |
-| **the design system** | Components, icons, and the token contract. `@cheshire/ui`. |
+| **the application surface** | `@cheshire/app` — the one package an application imports, on entries per system. The packages behind it are named here for identity, never as imports. |
+| **the design system** | Components, icons, and the token contract. `@cheshire/ui`, reached as `@cheshire/app/ui`. |
 | **the command system** | Commands, shortcuts, menus, context menus, the palette. A menu item is a command reference. |
 | **the Shell Surface** | What an application contributes to the UI. Views, commands, menus — everything that runs in the renderer. |
 | **the shell** | The root of the renderer: title bar, body, status bar, and the overlay plane. `@cheshire/shell`. |
