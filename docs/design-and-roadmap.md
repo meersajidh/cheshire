@@ -64,47 +64,37 @@ A developer should not need to think about the underlying runtime at all. They t
 
 Condensed from the principles; stated here so the design reads on its own.
 
-1. **Developer experience first** — every API is judged by effort removed (principle 1).
-2. **Convention over configuration** — minimal setup, sensible defaults (principle 1).
-3. **Opinionated infrastructure, platform for domain layering** — one obvious way to
-   build; the business domain uses platform services, it never re-plumbs them (principle 1).
-4. **Runtime independence** — a strategic objective, designed now and validated by a
-   runtime port when one is scheduled (principle 4).
-5. **Momentum over meta-work** — consolidation never blocks the next runnable milestone
+1. **Convention over configuration** — minimal setup, sensible defaults, one obvious way to
+   do things (principle 1).
+2. **Opinionated infrastructure** — cheshire configures it; the application codes, builds,
+   runs and releases on top, and never re-plumbs a platform service (principle 1).
+3. **Runtime independence** — the application depends on cheshire's abstractions, never on
+   the runtime's modules, APIs, channels or protocols (principle 4).
+4. **Momentum over meta-work** — every stage ends with something that runs and works
    (principle 6).
 
-## 4. The two products
+## 4. What cheshire ships, and what an application supplies
 
-The most important structural fact (principle 5): cheshire is **two products**.
-
-```
-                        YOU
-                         │
-             ┌───────────┴────────────┐
-             ▼                        ▼
-     Framework Product        Generated Application
-     (repo: cheshire)         (the customer's repo)
-```
-
-- The **framework product** is what framework developers maintain: packages, template,
-  CLI, docs. Its user is an application developer.
-- A **generated application** is a consumer. It contains no framework source — only
-  `@cheshire/*` dependencies — exactly as `npm install react` copies no React source into an
-  app.
+cheshire is the product. What matters is the line between it and an application built with
+it: everything on cheshire's side is in scope here, and everything past it is the
+application's own business.
 
 ```
      Framework repository ── publishes ──▶ npm packages ──▶ Generated application
 ```
 
-An application depends on released packages. Never on framework source.
+cheshire is what framework developers maintain: packages, template, CLI, docs. Its user is an
+application developer. A generated application contains no framework source — only
+`@cheshire/*` dependencies, exactly as `npm install react` copies no React source into an app.
+It depends on released packages, never on framework source (principle 5).
 
 ## 5. The four systems
 
-The framework product has four major systems. Three live in the framework repository; the
-playground lives in its own.
+cheshire has four major systems. Three live in the framework repository; the playground lives
+in its own.
 
 ```
-                  Framework Product
+                      cheshire
                          │
      ┌───────────┬───────┴──────┬────────────────┐
      ▼           ▼              ▼                ▼
@@ -116,7 +106,7 @@ playground lives in its own.
 
 The framework code itself, published under the `@cheshire/*` scope. **Three groups, and the
 difference between them is the point** — a package list that reads uniformly invites a developer
-to shop through it, which is the effort principle 1 exists to remove.
+to shop through it, against principle 1's one obvious way to do things.
 
 **What an application imports — one name, and only one:**
 
@@ -152,9 +142,9 @@ application:**
 
 These are how the framework divides its own work, not vocabulary an application learns. The
 alternative — a mature application declaring six `@cheshire/*` dependencies and having to know
-which one holds `useSettings()` — is what a library asks of its user, and cheshire is a framework
-(principle 2). Frameworks with a socket model present one surface: `next/link`, `$app/*`,
-`astro:*`. Nobody imports `@next/link`.
+which one holds `useSettings()` — is what a library asks of its user, and it is the shopping-around
+that principle 1's *one obvious way to do things* rules out. Frameworks with a socket model
+present one surface: `next/link`, `$app/*`, `astro:*`. Nobody imports `@next/link`.
 
 That is a statement about **who may name a package**, not about how the code is split. The
 decomposition below is settled either way.
@@ -325,7 +315,7 @@ it is not obvious.
 
 **This decomposition is settled.** The list is the shape, decided by the reasoning in each entry
 below. Nothing here is waiting to prove it deserves to exist, and no package has to earn its
-boundary — that would be an evidence gate, which principle 6 rejects. What varies is only whether
+boundary — the shape is ambitious and vision-driven (principle 6). What varies is only whether
 a package has been **built**: a name appears on npm when there is something to install behind it,
 which is a fact about the calendar rather than a verdict about the design.
 
@@ -541,7 +531,8 @@ out it was wrong.
 
 ## 12. Runtime independence
 
-A first-class strategic objective (principle 4), executed in two moves:
+The runtime is an infrastructure implementation detail (principle 4), and that is held in two
+moves:
 
 1. **Now — the enforced invariant.** No application code names the runtime: no Electron
    modules, process/window APIs, IPC channels, or schemes. Everything reaches the runtime

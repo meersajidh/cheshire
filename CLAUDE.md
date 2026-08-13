@@ -2,9 +2,9 @@
 
 cheshire is a **platform for building desktop applications**: `npm create cheshire my-app` gives
 a developer a fully configured desktop app; they build their domain in `src/` and never
-think about the runtime. Two products: the **framework** (this repo) and the **generated
-application** (its customer). The developer is the customer; developer experience is the
-product.
+think about the runtime. cheshire is the product, and what matters is **the line between it and
+an application built with it** — everything on cheshire's side is in scope, everything past it
+is the application's own business.
 
 ## Source of truth — read in order, do not duplicate here
 
@@ -63,11 +63,35 @@ Verified on a freshly generated app installed for real: the view renders in `dev
 editing it updates the window with no restart, and the packaged app renders the same view
 from inside its asar. **Stage 2 (commands & menus: the app's command appears in the menu and
 on a shortcut, and opens the view) is next** — it extends the same `AppDefinition` object;
-nothing about the mechanism changes. **Stage 2 is on hold** while the owner reviews the
-design docs; the plan is `.local/plans/stage-2.md` (Part 0 committed, Part 1 not started).
-It splits into **2a** — frameless window, preload membrane, CSP, window controls, cheshire's own
-title bar — and **2b** — commands, keybindings, menu bar. The preload lands in 2a regardless
-of the menu decision, because `frame: false` means cheshire draws the window controls.
+nothing about the mechanism changes. The plan is `.local/plans/stage-2.md` (Part 0 committed,
+Part 1 not started). It splits into **2a** — frameless window, preload membrane, CSP, window
+controls, cheshire's own title bar — and **2b** — commands, keybindings, menu bar. The preload
+lands in 2a regardless of the menu decision, because `frame: false` means cheshire draws the
+window controls.
+
+**The design-document review is in progress.** Two documents are done — `principles.md` and
+`design-and-roadmap.md` — producing 16 fixes, all closed
+(`.local/plans/design-and-roadmap-fixes.md`, now a record). The package split is the largest of
+them. **`application-surface.md` is next, then `docs/guides/`**; working file
+`.local/plans/application-surface-review.md`.
+
+Distinguish two things that are easy to conflate, and were: an **owner review** is the owner
+reading and asking, with the answers becoming fixes. An **audit pass** is me reading for
+correctness. `application-surface.md` and both guides have had the audit — they were refreshed
+after the package split — and **not** the review. Only the review finds the things no gate and no
+audit can: a decision that is wrong rather than stale.
+
+**Stage 2 waits for the review** (`.local/plans/stage-2.md`, Part 1). `application-surface.md` §7
+holds six decision points; two touch stage 2 — whether a view or its container declares location,
+and how a settings schema is written (a persisted format, so the hardest on the list to change
+later).
+
+**npm still holds `0.1.2`, deliberately.** The next release is `0.2.0` — breaking, since
+`@cheshire/app` changes meaning and `@cheshire/cli` is new — and it goes out **at a milestone,
+not mid-stage**. Nothing is at risk in the meantime: the `@cheshire` scope reserves every name, and
+`^0.1.2` in already-generated apps excludes `0.2.0` (verified), so no consumer can pick the split
+up by accident. Note `stamp()` still produces `0.1.3-dev.*`, one axis behind where the next
+release actually goes; it self-corrects when the manifests move.
 
 **The local registry is the whole consumer loop — there is no second mechanism.** `pack:local`
 and `create-cheshire --from-tarballs` were retired on 2026-08-07; the registry does everything
@@ -189,8 +213,8 @@ and never implements one. **`workbench` is now a template name only** — the pa
   installation needs no flag. It is **not** `webPreferences.sandbox`, which stays `true`
   everywhere. The reasoning lives at the call site in `packages/cli/src/electron.ts` — keep it
   there, or someone collapses the platform check and ships it.
-- **No plugin system.** First-party surface only; apps contributing views/commands/menus
-  is the platform's ordinary surface, not a plugin mechanism.
+- **No plugin system.** The application is the only extension; apps contributing
+  views/commands/menus is the platform's ordinary surface, not a plugin mechanism.
 
 ## Locked decisions — published surface, do not relitigate
 

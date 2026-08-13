@@ -7,8 +7,7 @@
 > This document settles the **layering** — the two surfaces, and which side of the line each
 > concern falls on. It does **not** settle the API shape of anything unbuilt; that is decided at
 > the stage that builds it, against a running thing (principle 6). Where a genuinely hard-to-reverse
-> choice is visible from here, it is listed in §7 as a decision point rather than quietly assumed
-> (principle 6).
+> choice is visible from here, it is listed in §7 as a decision point rather than quietly assumed.
 >
 > Upstream of this document: [principles](principles.md), then
 > [design & roadmap](design-and-roadmap.md). A conflict resolves in their favour.
@@ -29,8 +28,8 @@
 └──────────────────────────────────────────────────────────┘
 ```
 
-Two products, two repositories (principle 5). The application depends on released `@cheshire/*`
-packages and never on framework source. cheshire supplies every layer below the domain, including
+The application depends on released `@cheshire/*` packages and never on framework source
+(principle 5). cheshire supplies every layer below the domain, including
 the ones the application would otherwise have to assemble: the process model, the build, the
 shell, and the services.
 
@@ -44,8 +43,8 @@ code here that names one of them directly is a defect in this document, not an a
 spelling.
 
 The subpaths are entries of one package, the way `next/link` is, and not siblings an application
-assembles — cheshire is a framework rather than a library (principle 2), so it presents one
-surface instead of a set to shop through.
+assembles — cheshire is a framework rather than a library, so it presents one surface instead of
+a set to shop through.
 
 ### An application declares into a system; it never implements one
 
@@ -103,7 +102,7 @@ The distinction is not cosmetic. It removes an entire category of machinery:
 | A manifest file, parsed and validated at runtime | Typed values in `src/index.ts`, checked at build |
 | A sandbox per extension — iframes, a `view://` scheme, per-view CSP tiers | One renderer, one policy |
 | Trust classes, permission scopes, capability allowlists | First-party code throughout |
-| Version negotiation between host and extension | One version, one lockfile, one build |
+| An API version handshake between host and extension | One version, one lockfile, one build |
 | Lazy activation events (`onCommand`, `onView`) | An import graph the bundler already understands |
 
 The prior attempt (`new-ru-soam`) carries all of it, because its bundles are separately loaded
@@ -284,7 +283,7 @@ the window.
 Two consequences worth stating plainly:
 
 - **Main no longer sees application calls.** It observes the resource access the host performs,
-  not the intent behind it. Under principle 3 — everything is first-party — this is not a security
+  not the intent behind it. Under principle 3 — the application is the only extension — this is not a security
   hole, but it is an auditing question that phase 3 has to answer deliberately.
 - **Two channels will exist**: the application's own, and cheshire's framework-private bridge. Their
   boundary has to stay legible, or an application author reaches for the wrong one. cheshire's is not
@@ -368,7 +367,7 @@ a layout that survives a restart.
 
 ## 7. Open decision points
 
-Surfaced, not decided (principle 6). Each is hard to reverse and belongs to the stage that builds it.
+Surfaced, not decided. Each is hard to reverse and belongs to the stage that builds it.
 
 > Two earlier items on this list are now settled by the template decision in
 > [design & roadmap](design-and-roadmap.md) §5: a template is a **configuration of cheshire's

@@ -379,9 +379,10 @@ registry**, from the very first run. This is not caution; it is the rule that ca
 directory another had written to.
 
 **No plugin system.** Views, commands and menus contributed by an application are the platform's
-ordinary surface, not a plugin mechanism. First-party surface only. What that removes is an entire
-category of machinery — manifests parsed at runtime, per-extension sandboxes, trust classes,
-version negotiation between host and extension, lazy activation events — and what it buys is that
+ordinary surface, not a plugin mechanism. The application is the only extension. What that removes
+is an entire category of machinery — manifests parsed at runtime, per-extension sandboxes, trust
+classes, an API version handshake between host and extension, lazy activation events — and what
+it buys is that
 **a contribution is a value the compiler can see**. A typo'd command id in a menu becomes a build
 error naming the application's own file, not a warning in a log at runtime.
 
