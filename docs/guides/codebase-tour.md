@@ -1,6 +1,6 @@
 # Codebase tour
 
-> **What this is.** A walk through cheshire's code in the order it actually runs. It follows one
+> **What this is.** A walk through Cheshire's code in the order it actually runs. It follows one
 > `pnpm dev` from the developer's keystroke to a painted window, then `build` and `package` to an
 > installable application, naming the file and line at each step.
 >
@@ -17,7 +17,7 @@
 > `pnpm check`. Resolve them by search: `grep -n "function loadApp"`, `Ctrl-T` in VS Code, `gd`
 > with a language server.
 >
-> **A warning about scale.** cheshire's design documents describe *systems* — a design system, a
+> **A warning about scale.** Cheshire's design documents describe *systems* — a design system, a
 > command system, storage, settings — and almost none of that is code yet. This tour is the honest
 > counterweight: it walks what exists. When the two disagree, the code is right and
 > [the application surface](../application-surface.md) is intent.
@@ -72,8 +72,8 @@ including for unscoped `create-cheshire`, where stripping an absent scope is a n
 `scripts/check-layout.mjs` enforces it, so the name on npm and the name on disk cannot
 drift apart.
 
-A **template** is an opinionated blueprint — a configuration of cheshire's systems that
-`create-cheshire` materialises into an application (design & roadmap §5). `workbench` is the only one
+A **template** is an opinionated blueprint — a configuration of Cheshire's systems that
+`create-cheshire` materialises into an application (design & roadmap §4). `workbench` is the only one
 that exists; `chat` and `community` are named shapes and nothing more. Today a template configures
 very little, because there is very little to configure — that grows with the systems, not ahead of
 them.
@@ -134,7 +134,7 @@ if (error instanceof CheshireCliError) {
 
 `CheshireCliError` (`packages/cli/src/errors.ts:CheshireCliError`) means "this message is already the whole story for
 the developer reading it" — printed without a stack, because a stack through framework internals
-tells an application author nothing they can act on. Anything else is a bug in cheshire and keeps its
+tells an application author nothing they can act on. Anything else is a bug in Cheshire and keeps its
 stack. When you add a CLI failure path, that is the choice you are making.
 
 ### 2. Finding and reading the application
@@ -150,7 +150,7 @@ Three things happen in twenty lines:
 1. **`cheshire.config.ts` is the marker.** No file, no application — and the error names the fix
    (`app.ts:loadApp()`).
 2. **Vite's module runner evaluates the TypeScript** (`app.ts:loadApp()`). This is the only place in
-   cheshire that loads TypeScript at run time.
+   Cheshire that loads TypeScript at run time.
 3. **`resolveConfig` applies defaults** (`app.ts:loadApp()`), and `CheshireConfigError` is re-wrapped as a
    `CheshireCliError` so it arrives stack-free.
 
@@ -268,7 +268,7 @@ through `CHESHIRE_RUNTIME_OPTIONS`.
 
 ### 6. The main process
 
-`packages/runtime-electron/src/main.ts` — 77 lines, and the only file in cheshire that imports
+`packages/runtime-electron/src/main.ts` — 77 lines, and the only file in Cheshire that imports
 `electron`.
 
 `start(options):59` sets the app name and identifier, waits for `whenReady`, and creates a window.
@@ -336,7 +336,7 @@ Same first two steps as `dev` — load the config, generate `.cheshire/` — the
 That third step is the one to read properly. `RUNTIME_PROVIDED` at `main-config.ts:RUNTIME_PROVIDED` is
 `electron` plus every Node builtin, in both bare and `node:` form. They stay external because they
 are baked into the Electron binary and exist only at run time — you cannot bundle them, and you do
-not need to. Everything else, including all of cheshire's own packages, is inlined
+not need to. Everything else, including all of Cheshire's own packages, is inlined
 (`ssr: { noExternal: true }` at `main-config.ts:mainConfig()`).
 
 The output is one self-contained `.cheshire/dist/main/main.mjs`. `entryFileNames: 'main.mjs'` is
@@ -386,7 +386,7 @@ there, one of the two defences above has broken.
 > **Running the unpacked build on Linux** aborts with _"The SUID sandbox helper binary was found,
 > but is not configured correctly"_. That is correct behaviour, not a bug: `--dir` output was never
 > installed, so `chrome-sandbox` is not root-SUID. A real installation's postinstall does that.
-> To smoke-test the directory, pass `--no-sandbox` **by hand**, on the command line. cheshire never
+> To smoke-test the directory, pass `--no-sandbox` **by hand**, on the command line. Cheshire never
 > puts that flag in a package.
 
 ---
@@ -436,9 +436,9 @@ Electron binary to launch, because pnpm 10+ silently skips a dependency's instal
 they are named. So the gate lives outside this repository — the playground is at
 `~/Repos/msh/play-cheshire/`, and every generated application lives under it.
 
-**The local registry is the whole loop.** There is one way to get cheshire into a consumer, and
+**The local registry is the whole loop.** There is one way to get Cheshire into a consumer, and
 it is the way a real developer gets it. (This is the *development* publish; the release publish
-to npmjs.org is a different thing with different rules — design & roadmap §11 has both.) A registry also proves what nothing else does: that a
+to npmjs.org is a different thing with different rules — design & roadmap §10 has both.) A registry also proves what nothing else does: that a
 scope is readable, that `pnpm create cheshire` resolves `create-cheshire` by name, that a
 transitive dependency is reachable.
 
@@ -473,7 +473,7 @@ published is seconds old. Add the scope to `minimumReleaseAgeExclude`.
 **A generated application is pnpm-only, and `create-cheshire` enforces it** — it runs `pnpm install`
 whatever invoked it, and refuses with a message naming the fix if pnpm is absent.
 
-cheshire *chose* pnpm, the way it chose Electron, React and Vite; the settings in a generated
+Cheshire *chose* pnpm, the way it chose Electron, React and Vite; the settings in a generated
 `pnpm-workspace.yaml` exist to undo pnpm's own defaults rather than to compensate for something
 npm and yarn lack. Both of them hoist by default and run install scripts by default, so they need
 no equivalent of `nodeLinker: hoisted` or `allowBuilds`. What makes the choice non-negotiable
@@ -481,7 +481,7 @@ afterwards is that npm **"succeeds"** while silently ignoring a file it does not
 clean-looking install that packages wrong on Windows.
 
 `nodeLinker: hoisted` is load-bearing twice over, and the second reason bites first. Beyond
-electron-builder not following Windows junctions when collecting binaries, the files cheshire
+electron-builder not following Windows junctions when collecting binaries, the files Cheshire
 generates into `.cheshire/` import `@cheshire/shell` and `@cheshire/runtime-electron` by name.
 Those belong to `@cheshire/cli`, which emits the imports and so declares them; they resolve only
 because `hoisted` puts every package flat in the application's own `node_modules`. Measured by
@@ -550,7 +550,7 @@ What stage 2 and beyond will touch, and what is deliberately empty today:
 | `CheshireConfig` | `appId`, `productName`, `window` | A `services` block — how a template declares which systems are switched on |
 | `@cheshire/runtime-electron` | One window, **no IPC and no preload** | Stage 2a: a preload membrane, window controls, a CSP |
 | Design system | Hand-written CSS in `@cheshire/shell` | `@cheshire/ui` — components, icons, a two-layer token contract |
-| Host process | Does not exist | The application's own backend, brokered by cheshire (surface doc §4) |
+| Host process | Does not exist | The application's own backend, brokered by Cheshire (surface doc §4) |
 | Runtime abstraction | Electron named directly, inside the runtime package | Phase 4, validated by a Tauri port |
 
 Read that table against [the application surface](../application-surface.md) and the size of the

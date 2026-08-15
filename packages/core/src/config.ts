@@ -1,5 +1,5 @@
 /**
- * The config contract (principle 2). An application seats into cheshire by exporting
+ * The config contract (principle 2). An application seats into Cheshire by exporting
  * one of these from `cheshire.config.ts`; it authors no entry file, no build
  * config, and no runtime wiring.
  */

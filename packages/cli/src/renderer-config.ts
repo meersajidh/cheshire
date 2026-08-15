@@ -20,7 +20,7 @@ export function rendererOutDir(app: AppContext): string {
 export function rendererConfig(app: AppContext, mode: 'dev' | 'build'): InlineConfig {
   const base: InlineConfig = {
     configFile: false,
-    // The application has no `.env` to load — cheshire owns the build.
+    // The application has no `.env` to load — Cheshire owns the build.
     envDir: false,
     root: app.generatedDir,
     // Relative, because the packaged renderer is loaded from a file:// path,

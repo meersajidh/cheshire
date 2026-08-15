@@ -121,14 +121,14 @@ function init(targetDir: string): void {
 /**
  * Install with pnpm — always, and never with whatever invoked `create`.
  *
- * A cheshire application is pnpm-shaped by construction, in two ways that have no
+ * A Cheshire application is pnpm-shaped by construction, in two ways that have no
  * equivalent anywhere else:
  *
  * - `pnpm-workspace.yaml` carries `nodeLinker: hoisted`, which exists because
  *   electron-builder cannot follow pnpm's Windows junctions when it collects
  *   binaries — without it a packaged application ships incomplete and crashes
  *   on launch. npm and yarn have no such setting to honour.
- * Detecting the caller's package manager was therefore offering a choice cheshire
+ * Detecting the caller's package manager was therefore offering a choice Cheshire
  * cannot honour: npm "succeeds" while silently ignoring the linker, and the
  * failure surfaces much later, at packaging, on Windows. Being explicit costs a
  * developer one `npm i -g pnpm`; the alternative costs them a debugging session
@@ -137,7 +137,7 @@ function init(targetDir: string): void {
 function install(targetDir: string, registry?: string): void {
   if (!hasPnpm()) {
     throw new ScaffoldError(
-      'create-cheshire: cheshire applications require pnpm.\n' +
+      'create-cheshire: Cheshire applications require pnpm.\n' +
         '  `nodeLinker: hoisted` has no npm or yarn equivalent, and electron-builder\n' +
         '  needs it to package correctly on Windows.\n\n' +
         '    install it:  npm i -g pnpm\n' +

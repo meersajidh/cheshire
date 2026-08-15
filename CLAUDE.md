@@ -1,9 +1,9 @@
-# cheshire — project instructions
+# Cheshire — project instructions
 
-cheshire is a **platform for building desktop applications**: `npm create cheshire my-app` gives
+Cheshire is a **platform for building desktop applications**: `npm create cheshire my-app` gives
 a developer a fully configured desktop app; they build their domain in `src/` and never
-think about the runtime. cheshire is the product, and what matters is **the line between it and
-an application built with it** — everything on cheshire's side is in scope, everything past it
+think about the runtime. Cheshire is the product, and what matters is **the line between it and
+an application built with it** — everything on Cheshire's side is in scope, everything past it
 is the application's own business.
 
 ## Source of truth — read in order, do not duplicate here
@@ -11,8 +11,8 @@ is the application's own business.
 1. **`docs/principles.md`** — 6 principles, upstream of every decision. A decision that
    contradicts one is wrong, or the principle is amended explicitly first.
 2. **`docs/design-and-roadmap.md`** — structure, packages, the CLIs, development flow,
-   roadmap, and Milestone A with its stage slicing (§13). Names live in its appendix.
-3. **`docs/application-surface.md`** — how an application layers on cheshire: the two surfaces
+   roadmap, and Milestone A with its stage slicing (§12). Names live in its appendix.
+3. **`docs/application-surface.md`** — how an application layers on Cheshire: the two surfaces
    (Shell and Host), every contribution kind, the platform services and which zone each sits
    in. Settles the **layering**, deliberately not the API shape of anything unbuilt — that is the
    building stage's call. Its §7 is the live list of open decision points.
@@ -37,7 +37,7 @@ and never touches a registry, which is why every user-visible string (`pnpm crea
 `cheshire dev`, `cheshire.config.ts`) survived both the rename and the split unchanged.
 
 **Two names are application-facing and the rest are not.** `create-cheshire` generates the
-application; **`@cheshire/app` is its entire surface onto cheshire thereafter** — an application
+application; **`@cheshire/app` is its entire surface onto Cheshire thereafter** — an application
 imports that name and no other `@cheshire/*` package, ever. `core`, `shell`,
 `runtime-electron` and every system package to come are the framework's internal factoring.
 `@cheshire/cli` is a devDependency that supplies a command, not an import.
@@ -65,8 +65,8 @@ from inside its asar. **Stage 2 (commands & menus: the app's command appears in 
 on a shortcut, and opens the view) is next** — it extends the same `AppDefinition` object;
 nothing about the mechanism changes. The plan is `.local/plans/stage-2.md` (Part 0 committed,
 Part 1 not started). It splits into **2a** — frameless window, preload membrane, CSP, window
-controls, cheshire's own title bar — and **2b** — commands, keybindings, menu bar. The preload
-lands in 2a regardless of the menu decision, because `frame: false` means cheshire draws the
+controls, Cheshire's own title bar — and **2b** — commands, keybindings, menu bar. The preload
+lands in 2a regardless of the menu decision, because `frame: false` means Cheshire draws the
 window controls.
 
 **The design-document review is in progress.** Two documents are done — `principles.md` and
@@ -136,7 +136,7 @@ versions resolve cleanly on either side and prove nothing. Mechanics, flags and 
 **services** via one typed hook, reached by an application as `@cheshire/app/react`. An application *declares into* a system
 and never implements one. **`workbench` is now a template name only** — the package is
 `@cheshire/shell`. The full vocabulary, the systems list and the shell's three zones:
-`docs/design-and-roadmap.md` §2 and §7.
+`docs/design-and-roadmap.md` §3 and §6.
 
 *Update this section at every stage boundary.*
 
@@ -166,7 +166,7 @@ and never implements one. **`workbench` is now a template name only** — the pa
   consumer; an app's build compiles app code only. **Never trust a workspace link** —
   links resolve source paths and hide packaging failures (e.g. `exports` pointing at `.ts`
   under `node_modules` fails on a real install; a link hides it completely). The
-  playground (`play-cheshire`, external repo) and all gates consume cheshire from the local
+  playground (`play-cheshire`, external repo) and all gates consume Cheshire from the local
   registry.
 - **A gate must live outside the framework repository.** `.local/gate/demo` sat *inside* it
   and silently inherited settings it was supposed to be proving it did not need: the
@@ -255,5 +255,5 @@ hand-rolled CDP script; `agent-browser skills get electron` documents the flow.
 The previous attempt lives at `~/Repos/msh/x-bb` (and its reference app at
 `~/Repos/msh/new-ru-soam`). It is an **evidence bank** — consult it only when a concrete
 technical question arises (packaging, workbench surface, error recovery). Never import its
-process apparatus, and never cite it in cheshire's docs; cheshire's rules stand on their own
+process apparatus, and never cite it in Cheshire's docs; Cheshire's rules stand on their own
 merits.

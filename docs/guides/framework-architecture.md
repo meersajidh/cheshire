@@ -1,7 +1,7 @@
 # Framework architecture
 
-> **What this is.** The shape of cheshire as a _framework_ — the handful of problems any framework
-> of this kind has to solve, the answer cheshire picked for each, and why. It is the conceptual
+> **What this is.** The shape of Cheshire as a _framework_ — the handful of problems any framework
+> of this kind has to solve, the answer Cheshire picked for each, and why. It is the conceptual
 > layer under [the codebase tour](codebase-tour.md): the tour walks the code, this explains the
 > pattern the code is an instance of.
 >
@@ -38,12 +38,12 @@ flowchart LR
     A["your program<br/>owns the entry point"] -->|calls| B["lodash<br/>date-fns<br/>react-dom"]
   end
   subgraph FW["Using a framework"]
-    C["cheshire<br/>owns the entry point"] -->|calls| D["your cheshire.config.ts<br/>your src/"]
+    C["Cheshire<br/>owns the entry point"] -->|calls| D["your cheshire.config.ts<br/>your src/"]
   end
 ```
 
 This is **inversion of control** — _don't call us, we'll call you_. React is a mild example: you
-write components, React decides when to render them. Next.js is a strong one, and cheshire is the
+write components, React decides when to render them. Next.js is a strong one, and Cheshire is the
 same strength. An application never writes the HTML entry, never writes the module that mounts
 the shell, never writes the Electron main process, and never configures the bundler.
 
@@ -68,7 +68,7 @@ window is created, how the app is packaged, which flags a development launch nee
 Everything below is downstream of one boundary: which files belong to the application, and which
 belong to cheshire.
 
-|  | The application owns | cheshire owns |
+|  | The application owns | Cheshire owns |
 | --- | --- | --- |
 | Configuration | `cheshire.config.ts` | every tsconfig, the Vite configs, the packaging config |
 | Contributions | `src/index.ts` — what the app declares | the contract it declares against, and the shell that renders it |
@@ -77,7 +77,7 @@ belong to cheshire.
 | Generated | _nothing — it is written for them_ | `.cheshire/` |
 | Build output | its own renderer bundle | its own packages, shipped built |
 
-That line generalises past files. cheshire's capabilities arrive as **systems**, each reached through named
+That line generalises past files. Cheshire's capabilities arrive as **systems**, each reached through named
 services — design, command, shell, customization, storage, identity, devtools — and the
 application's job at every one is to *declare into* it, never to implement it. The table above is the stage-1 slice of
 that: today only views cross the line, and by stage 2 commands and menus do. The whole list, and
@@ -85,7 +85,7 @@ which system each contribution belongs to, is [the application surface](../appli
 
 Two properties are worth naming, because they are the ones that decay quietly if nobody watches.
 
-**cheshire arrives built.** What an application installs is compiled JavaScript, type declarations
+**Cheshire arrives built.** What an application installs is compiled JavaScript, type declarations
 and a stylesheet — no framework TypeScript source at all. An app's build therefore compiles app
 code only, the same relationship it has with every other dependency
 ([principle 5](../principles.md)). The consequence for you, on day one: after editing framework
@@ -104,7 +104,7 @@ flowchart TD
     GEN[".cheshire/ — GENERATED, gitignored<br/>index.html · renderer.tsx · config.ts<br/>main.mjs · prod/main.mjs · tsconfig.json · env.d.ts"]
     OUT["dist/ — packaged application"]
   end
-  subgraph FW["cheshire — installed into node_modules"]
+  subgraph FW["Cheshire — installed into node_modules"]
     APPPKG["@cheshire/app<br/>the app's whole surface"]
     CLI["@cheshire/cli<br/>the cheshire bin: dev · build · package"]
     CORE["@cheshire/core<br/>the two contracts"]
@@ -127,7 +127,7 @@ flowchart TD
 
 ---
 
-## 3. Five problems, and how cheshire solves them
+## 3. Five problems, and how Cheshire solves them
 
 Every framework in this family answers the same five questions. The answers are what make one
 framework feel different from another.
@@ -137,12 +137,12 @@ framework feel different from another.
 **The problem.** The CLI is a binary in `node_modules`. It has to work out which directory is
 the application and where its code lives.
 
-**cheshire's answer: the config file is the marker.** `cheshire dev` looks for `cheshire.config.ts` in the
+**Cheshire's answer: the config file is the marker.** `cheshire dev` looks for `cheshire.config.ts` in the
 current directory. Present means this is an application; absent means the developer is in the
 wrong place, and the error says so and names the fix.
 
 This is the same convention as `next.config.js` or `vite.config.ts`, with one difference: for
-cheshire the file is not optional. It carries the app's identity — `appId`, `productName` — which a
+Cheshire the file is not optional. It carries the app's identity — `appId`, `productName` — which a
 desktop application cannot be built without.
 
 ### 3.2 Reading a config written in the application's language
@@ -150,7 +150,7 @@ desktop application cannot be built without.
 **The problem.** `cheshire.config.ts` is TypeScript. Node does not run TypeScript, and the CLI needs
 the value inside it before any bundler has started.
 
-**cheshire's answer: Vite's module runner loads it, once.** `runnerImport` compiles and evaluates
+**Cheshire's answer: Vite's module runner loads it, once.** `runnerImport` compiles and evaluates
 the file in-process, and the CLI then applies defaults with `resolveConfig`. The result is a
 plain object that travels onward — into a generated module for the renderer, and into the
 Electron process as either an environment variable (development) or a value baked into the
@@ -165,7 +165,7 @@ config file or parses TypeScript.
 **The problem.** The framework has a shell, and the application has a config and some code. Some
 file has to import both and start something. Whoever owns that file owns the boot sequence.
 
-**cheshire's answer: generated files in the application's directory.** On every run, `cheshire` writes
+**Cheshire's answer: generated files in the application's directory.** On every run, `cheshire` writes
 `.cheshire/` into the app: the HTML entry, the renderer entry that mounts the shell, the config
 as a module, the Electron entries, a tsconfig and an ambient CSS declaration. Every file is
 banner-marked as generated, and edits are lost on the next run.
@@ -181,7 +181,7 @@ Nothing has to be aliased into existence.
 Only `react` is the application's own declaration. The two framework packages are dependencies of
 **`@cheshire/cli`**, hoisted flat into the app's `node_modules` — which is the honest arrangement,
 because the CLI is what emits those import statements and so is what must guarantee they resolve.
-An application declares `@cheshire/app` and `@cheshire/cli` and nothing else of cheshire's; it
+An application declares `@cheshire/app` and `@cheshire/cli` and nothing else of Cheshire's; it
 never names a package it does not import.
 
 **That "hoisted flat" is `nodeLinker: hoisted` in the generated `pnpm-workspace.yaml`, and this is
@@ -221,7 +221,7 @@ Three details in the generated tsconfig are load-bearing, and each was paid for 
 **The problem.** An app contributes views, commands and menus. Something has to find them and
 register them.
 
-**cheshire's answer: one default export, imported by the generated renderer.** `src/index.ts`
+**Cheshire's answer: one default export, imported by the generated renderer.** `src/index.ts`
 default-exports `defineApp({ views })`, and the renderer the framework writes imports it by
 relative path. There is no registry to call, no lifecycle hook to implement, and no scanning of
 the filesystem for files that look like views — the app hands over a value, and the shell
@@ -269,7 +269,7 @@ Commands and menus (stage 2) extend the same object. Nothing about the mechanism
 **The problem.** Two processes, two build outputs, and a developer editing code in the middle of
 it.
 
-**cheshire's answer:**
+**Cheshire's answer:**
 
 - The **renderer** is served by Vite, with hot module replacement. Editing a view updates the
   window without a restart — app code is inside the dev module graph, reached through the
@@ -342,7 +342,7 @@ Next.js has one runtime target: a browser, plus a server you do not ship. A desk
 two processes in one shipped artifact, and a native binary underneath.
 
 **Two processes, one program.** The **main** process is Node with the desktop APIs — windows,
-menus, dialogs, the filesystem. The **renderer** is a browser page. cheshire owns both. An app's code
+menus, dialogs, the filesystem. The **renderer** is a browser page. Cheshire owns both. An app's code
 runs only in the renderer, and never names the runtime: no Electron modules, no IPC channels, no
 process or window APIs ([principle 4](../principles.md)). The runtime *interfaces* that will make
 that portable are designed with the runtime layer, not deferred until a second runtime exists;
@@ -369,11 +369,11 @@ installation is unaffected, because the installer's postinstall does SUID it.
 
 ---
 
-## 6. Where cheshire is deliberately different
+## 6. Where Cheshire is deliberately different
 
 **A real install is the only proof.** Workspace links resolve source paths and hide packaging
 failures — an `exports` entry pointing at a `.ts` file works perfectly through a link and fails
-on every real install. So cheshire's playground and every gate consume the framework from a **local
+on every real install. So Cheshire's playground and every gate consume the framework from a **local
 registry**, from the very first run. This is not caution; it is the rule that caught, during stage
 0, a package that installed with no type declarations at all because one build step emptied the
 directory another had written to.
@@ -386,12 +386,12 @@ it buys is that
 **a contribution is a value the compiler can see**. A typo'd command id in a menu becomes a build
 error naming the application's own file, not a warning in a log at runtime.
 
-**Systems, not a pile of APIs.** Everything cheshire ships is grouped as a system an application
+**Systems, not a pile of APIs.** Everything Cheshire ships is grouped as a system an application
 declares into, and every system is reached through named **services** — one typed hook each.
 The test of whether something belongs in a system is whether an application would otherwise
 write it: a shortcut matcher, a menu bar, a theme switcher, a docking implementation. None of
 those are application code, in any phase. The canonical list is
-[design & roadmap](../design-and-roadmap.md) §2.
+[design & roadmap](../design-and-roadmap.md) §3.
 
 **Build with vision.** Scope and direction come from the product owner. There is no
 evidence-gating and no "wait for a second consumer" argument here; the one thing that gets
@@ -407,16 +407,16 @@ Consolidation, documentation and refactoring queue _behind_ the next runnable mi
 
 | Term | Meaning |
 | --- | --- |
-| **application** / **app** | What a developer builds with cheshire. cheshire's customer. |
+| **application** / **app** | What a developer builds with cheshire. Cheshire's customer. |
 | **the framework** | This repository: packages, templates, CLIs. |
-| **system** | A capability cheshire ships whole, that an application declares into and never implements — design, command, workbench, settings, storage, diagnostics. |
+| **system** | A capability Cheshire ships whole, that an application declares into and never implements — design, command, workbench, settings, storage, diagnostics. |
 | **the design system** | Components, icons, and the design-token contract. `@cheshire/ui`. Not built. |
 | **the shell** | The root of the renderer: title bar, **body**, status bar, and an overlay plane. `@cheshire/shell`. |
 | **the body** | The shell's middle zone, holding the regions. Named so it cannot be confused with *activity bar*. |
 | **the command system** | Commands, shortcuts, menus, context menus, the palette. A menu item is a *command reference* — it never holds a handler. Not built. |
 | **the config contract** | `cheshire.config.ts` — what the application *is*. |
 | **the contribution contract** | `src/index.ts` — what the application *contributes*. |
-| **template** | An opinionated blueprint: a configuration of cheshire's systems, materialised by `create-cheshire`. `workbench` is the only one built. |
+| **template** | An opinionated blueprint: a configuration of Cheshire's systems, materialised by `create-cheshire`. `workbench` is the only one built. |
 | **view** | An id, a title, and a React component. What the shell renders. |
 | **derivatives** | The generated contents of `.cheshire/`. Rewritten every run, never edited. |
 | **the seam** | The published surface: what an app can import and nothing more. |

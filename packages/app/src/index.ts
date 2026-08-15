@@ -3,7 +3,7 @@
  *
  * An application imports this name and no other `@cheshire/*` package, ever.
  * `@cheshire/core` and the system packages beside it are the framework's
- * internal factoring, not the application's vocabulary: cheshire is a framework
+ * internal factoring, not the application's vocabulary: Cheshire is a framework
  * rather than a library, so it presents one surface the way `next/*` and
  * `$app/*` do, instead of shipping a set of packages the developer assembles.
  *
