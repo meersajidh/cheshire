@@ -6,10 +6,11 @@
 > and built; the principles say what is true at all times. Where the two disagree, the
 > principles win or are amended explicitly.
 >
-> Downstream: [guides/framework-architecture.md](guides/framework-architecture.md) explains the
-> framework pattern this structure is an instance of, and
-> [guides/codebase-tour.md](guides/codebase-tour.md) walks the code that implements it. Both are
-> onboarding material — they never decide anything.
+> Downstream: `docs/references/` —
+> [framework-architecture.md](references/framework-architecture.md) explains the framework pattern
+> this structure is an instance of, [codebase-tour.md](references/codebase-tour.md) walks the code
+> that implements it, and a reference per system settles that system's mechanics. References are
+> deep dives, read when a question needs one; they never decide anything upstream of themselves.
 
 ---
 
@@ -59,8 +60,8 @@ Cheshire provides pre-made tools and services so apps do not build common featur
 | ------------------------ | ------------------------------------------------------------------- |
 | **design system**        | components · icons · the design-token contract · light/dark modes   |
 | **command system**       | commands · keyboard shortcuts · menus · context menus · the palette |
-| **shell system**         | layout · notifications · dialogs · title bar · status bar           |
-| **customization system** | settings · keybinding overrides · theme selection                   |
+| **shell system**         | layout · notifications · dialogs · window chrome · status bar        |
+| **settings system**      | schema · preferences                                                |
 | **storage system**       | db · blob stores                                                    |
 | **identity system**      | auth · credentials                                                  |
 | **devtools system**      | diagnostics _(ships)_ · developer tooling _(dev-only, stripped)_    |
@@ -102,7 +103,7 @@ There are four modules, three live in the framework repository while the playgro
   ```
   @cheshire/core           @cheshire/react          @cheshire/ui
   @cheshire/shell          @cheshire/layout         @cheshire/commands
-  @cheshire/customization                           @cheshire/storage
+  @cheshire/settings                                @cheshire/storage
   @cheshire/identity       @cheshire/devtools       @cheshire/runtime-*
   @cheshire/host
   ```
@@ -338,14 +339,12 @@ This decomposition is **fairly settled**
 - **The command system.** Command registry, keyboard shortcuts, menus and context menus, the command palette, and the keyboard-shortcuts editor.
 - Menus belong here rather than in the shell because **a menu item is a command reference** — it resolves its title, its shortcut and its enablement from the registry, and never holds a handler.
 
-### customization ○ phase 3
+### settings ○ phase 3
 
-- **The customization system**: everything the _user_ can change, over
-  everything the _developer_ declared.
+- **The settings system**: selection over the option spaces the other systems define. It selects among options; it does not add them.
 - It does not own the other systems' defaults — it **aggregates** them.
-- The command system owns the keybinding registry and an application's default shortcuts; customization owns the user's overrides to them, the single persistence layer they share, and the editor UI.
-- Same for theme selection and region sizes.
-- One precedence rule for all of it: **user > application default > platform default.**
+- The command system owns the keybinding registry and an application's default shortcuts. The settings system owns the resolved value, the single persistence layer, and the UI. Same for theme selection and region sizes.
+- A setting is an option space, a default, and whether the next level may change it. All three inherit **platform → application → user**.
 
 ### storage ○ phase 3
 
@@ -532,7 +531,7 @@ The shell system · layout and docking · the command system · the design syste
 
 ### Phase 3 — Productivity
 
-The customization system · the storage system · the identity system · the devtools system.
+The settings system · the storage system · the identity system · the devtools system.
 
 ### Phase 4 — Runtime abstraction
 
@@ -583,7 +582,7 @@ Stage 2 splits because `frame: false` means Cheshire draws the window controls, 
 │  ├── shell                               │              │
 │  ├── layout                              │              │
 │  ├── commands                            │              │
-│  ├── customization                       │              │
+│  ├── settings                            │              │
 │  ├── storage                             │              │
 │  ├── identity                            │              │
 │  ├── devtools                            │              │

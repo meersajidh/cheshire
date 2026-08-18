@@ -66,7 +66,7 @@ window is created, how the app is packaged, which flags a development launch nee
 ## 2. The ownership line
 
 Everything below is downstream of one boundary: which files belong to the application, and which
-belong to cheshire.
+belong to Cheshire.
 
 |  | The application owns | Cheshire owns |
 | --- | --- | --- |
@@ -78,7 +78,7 @@ belong to cheshire.
 | Build output | its own renderer bundle | its own packages, shipped built |
 
 That line generalises past files. Cheshire's capabilities arrive as **systems**, each reached through named
-services — design, command, shell, customization, storage, identity, devtools — and the
+services — design, command, shell, settings, storage, identity, devtools — and the
 application's job at every one is to *declare into* it, never to implement it. The table above is the stage-1 slice of
 that: today only views cross the line, and by stage 2 commands and menus do. The whole list, and
 which system each contribution belongs to, is [the application surface](../application-surface.md).
@@ -407,7 +407,7 @@ Consolidation, documentation and refactoring queue _behind_ the next runnable mi
 
 | Term | Meaning |
 | --- | --- |
-| **application** / **app** | What a developer builds with cheshire. Cheshire's customer. |
+| **application** / **app** | What a developer builds with Cheshire. Cheshire's customer. |
 | **the framework** | This repository: packages, templates, CLIs. |
 | **system** | A capability Cheshire ships whole, that an application declares into and never implements — design, command, workbench, settings, storage, diagnostics. |
 | **the design system** | Components, icons, and the design-token contract. `@cheshire/ui`. Not built. |

@@ -20,7 +20,7 @@ never on framework source.
 ```
 packages/    every package, flat, each directory named for what it publishes as:
              app, cli, core, create-cheshire, runtime-electron, shell — plus
-             react, ui, layout, commands, customization, storage, identity,
+             react, ui, layout, commands, settings, storage, identity,
              devtools and host as the systems land
 templates/   opinionated blueprints — a configuration of Cheshire's systems (workbench)
 docs/        principles and architecture
@@ -38,7 +38,8 @@ application never imports.
   development flow, roadmap.
 - [docs/application-surface.md](docs/application-surface.md) — how an application layers on
   Cheshire: the Shell and Host surfaces, every contribution kind, the platform systems.
-- [docs/guides/](docs/guides/) — onboarding: framework architecture, codebase tour.
+- [docs/references/](docs/references/) — deep dives, read when a question needs one: framework
+  architecture, codebase tour, and a reference per system as each is designed.
 
 ## Development
 

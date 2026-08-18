@@ -17,10 +17,16 @@ is the application's own business.
    in. Settles the **layering**, deliberately not the API shape of anything unbuilt — that is the
    building stage's call. Its §7 is the live list of open decision points.
 
-`docs/guides/` (framework-architecture, codebase-tour) is onboarding material, not source of
-truth — it explains and walks what 1 and 2 decide. Its `path:symbol` cites are gated; its prose,
-diagrams and counts are not, so it still goes stale. Refresh it at stage boundaries, and never
-resolve a disagreement in its favour.
+`docs/references/` is **deep-dive and lookup material, not source of truth** — read when a
+question needs it, not front to back. framework-architecture and codebase-tour explain and walk
+what 1 and 2 decide; a per-system reference (command-system) settles the mechanics of one system
+in full, downstream of the layering 3 fixes. `path:symbol` cites are gated; prose, diagrams and
+counts are not, so it still goes stale. Refresh at stage boundaries, and never resolve a
+disagreement in its favour.
+
+`docs/guides/` is reserved for **how-to** material and is currently empty — there is none yet.
+The two tiers split on the question they answer: a reference answers *how does this work*, a
+guide answers *how do I do this*.
 
 ## Current position
 
@@ -69,17 +75,36 @@ controls, Cheshire's own title bar — and **2b** — commands, keybindings, men
 lands in 2a regardless of the menu decision, because `frame: false` means Cheshire draws the
 window controls.
 
-**The design-document review is in progress.** Two documents are done — `principles.md` and
-`design-and-roadmap.md` — producing 16 fixes, all closed
-(`.local/plans/design-and-roadmap-fixes.md`, now a record). The package split is the largest of
-them. **`application-surface.md` is next, then `docs/guides/`**; working file
+**The design-document review is in progress.** `principles.md` and `design-and-roadmap.md` have
+both had the **owner review** (2026-08-13/15); the earlier 16-fix pass over design-and-roadmap is
+a separate, closed record at `.local/plans/design-and-roadmap-fixes.md`.
+**`application-surface.md` is next, then `docs/references/`**; working file
 `.local/plans/application-surface-review.md`.
 
 Distinguish two things that are easy to conflate, and were: an **owner review** is the owner
 reading and asking, with the answers becoming fixes. An **audit pass** is me reading for
-correctness. `application-surface.md` and both guides have had the audit — they were refreshed
-after the package split — and **not** the review. Only the review finds the things no gate and no
+correctness. `application-surface.md`, framework-architecture and codebase-tour have had the
+audit — they were refreshed after the package split — and **not** the review. Only the review finds the things no gate and no
 audit can: a decision that is wrong rather than stale.
+
+**What the review changed, and what it taught.** `principles.md` went 95 → 58 lines: every
+principle now names something a design decision can *contradict*, and what came out was padding
+(appeals to React/Next/Flutter), restated categories, and one process rule that was agent
+calibration rather than architecture. **"Two products" is dead** — Cheshire is the product, and
+what matters is the line between it and an application built with it. `design-and-roadmap.md`
+lost its condensation of the principles (§3), renamed its "four systems" to **four modules**
+(a *system* is a capability an application declares into, and nothing else), and its §3
+Capabilities now **owns the systems/services table** that `application-surface.md` used to
+duplicate.
+
+**Two lessons worth keeping.** A cite that names a *mechanism* survives a rewrite; a cite that
+quotes a *phrasing* does not — 8 principle cites in `packages/` came through untouched while 13
+in prose broke. And numeric `§` cross-references break silently: renumbering cost 11 pointers
+across 5 files, and no gate sees any of them.
+
+**Naming, settled 2026-08-15: the product is `Cheshire`, the package/command/repo is
+`cheshire`** — exactly React/react. Prose takes the capital; identifiers, log prefixes, usage
+banners, paths and repo names stay lowercase. Rendered diagram labels count as prose.
 
 **Stage 2 waits for the review** (`.local/plans/stage-2.md`, Part 1). `application-surface.md` §7
 holds six decision points; two touch stage 2 — whether a view or its container declares location,
@@ -130,7 +155,7 @@ with `PNPM_CONFIG_REGISTRY`, never `npm_config_*`** — pnpm 11 reads its own
 registry" test actually resolved from npm and looked like a caching bug. And **design the test so
 the two registries disagree**: publish locally at a version npm does not have, or matching
 versions resolve cleanly on either side and prove nothing. Mechanics, flags and the
-`minimumReleaseAge` friction: `docs/guides/codebase-tour.md`, "the local registry".
+`minimumReleaseAge` friction: `docs/references/codebase-tour.md`, "the local registry".
 
 **Vocabulary, settled 2026-08-06.** Capabilities are **systems**, reached through named
 **services** via one typed hook, reached by an application as `@cheshire/app/react`. An application *declares into* a system
@@ -215,6 +240,13 @@ and never implements one. **`workbench` is now a template name only** — the pa
   there, or someone collapses the platform check and ships it.
 - **No plugin system.** The application is the only extension; apps contributing
   views/commands/menus is the platform's ordinary surface, not a plugin mechanism.
+- **The settings system selects; it never creates.** A setting that adds an option rather than
+  choosing among existing ones is an extension, which principle 3 forbids. Choosing among shipped
+  themes is a setting; authoring a new one is not. The owning system defines the option space, and
+  an application defines the space for its own domain by declaring a settings schema. A setting is
+  an option space, a default, and whether the next level may change it; all three inherit
+  **platform → application → user**. Named `settings`, not `customization` (2026-08-18) —
+  customization implies authoring, and the system covers platform and application levels too.
 
 ## Locked decisions — published surface, do not relitigate
 
@@ -257,3 +289,11 @@ The previous attempt lives at `~/Repos/msh/x-bb` (and its reference app at
 technical question arises (packaging, workbench surface, error recovery). Never import its
 process apparatus, and never cite it in Cheshire's docs; Cheshire's rules stand on their own
 merits.
+
+**VS Code is the primary source of inspiration; ru-soam is consulted for deviations.** Prefer
+ru-soam's answer over VS Code's only after the reasoning has been discussed and found to apply
+here — a deviation nobody reasoned through is a defect, not a decision. The test that carries the
+reasoning: **what forced this on VS Code, and does it force us?** Most of its machinery exists
+because extensions are late-bound, third-party, JSON-declared and independently versioned; strip
+those causes and the mechanism shrinks or disappears. Worked through end to end in
+`docs/references/command-system.md`.
