@@ -460,7 +460,10 @@ inert, and `pnpm config get registry` will still answer `https://registry.npmjs.
 pnpm variable and one value covers both halves: fetching `create-cheshire` itself, and the
 `pnpm install` it spawns inside the generated application. (`pnpm create` has no `--registry`
 option of its own; a `--registry` after the package name is forwarded to `create-cheshire`,
-which does accept it and applies it to that inner install.)
+which does accept it and applies it to that inner install. It also writes the registry into an
+`.npmrc` inside the generated application (`create-cheshire/src/cli.ts:pinRegistry()`) — without
+that, every later command there resolves from npmjs.org and fails naming a version that only
+exists locally.)
 
 **Make the two registries disagree.** Publish locally at a version npm does not have. With the
 same version on both sides nothing distinguishes them: identical tarball bytes (`pnpm pack`
