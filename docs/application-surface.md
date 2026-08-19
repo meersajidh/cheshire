@@ -34,70 +34,68 @@
 - `@cheshire/app` is that surface — declarations on the barrel, hooks on `/react`, components on `/ui`, the host entry on `/host` — and an application imports that name and no other `@cheshire/*` package, ever.
 - `@cheshire/core`, `@cheshire/react`, `@cheshire/ui` and the rest are real packages with the responsibilities design & roadmap §6 gives them, but they are the framework's internal factoring.
 
-### An application declares into a system; it never implements one
+### Capabilities as systems
 
 Cheshire's capabilities come as **systems** — coherent, whole, already built. The systems and the services each one is reached through are listed in [design & roadmap](design-and-roadmap.md) §3, which owns that list.
 
 This table here says only what each side of the line does. The application's job at every system is to _declare_, and the system's job is to do:
 
-| System                                      | The application declares                                                      | Cheshire does — with no application code                                                             |
-| ------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **design**                                  | which tokens, which mode default, which components it composes                | the components, the icons, the token contract, light/dark, the switcher                              |
-| [**command**](references/command-system.md) | that a command exists, its title, its default shortcut, where it appears      | the registry, chord matching, the menu bar, context menus, the palette, the shortcuts editor         |
-| **shell**                                   | that a view exists and where it may live                                      | the three zones, the regions, docking, resizing, restore-on-launch, the title bar, the overlay plane |
-| **settings** — schema                       | its own settings: option space, defaults, and whether each may be changed further down | reading, writing, validation, change events                                                 |
-| **settings** — preferences                  | nothing                                                                       | the settings UI, one persistence layer, and the inheritance rule across every system                 |
-| **storage**                                 | a schema and migrations                                                       | the store, transactions, blobs, encryption                                                           |
-| **identity**                                | which provider                                                                | sign-in, sessions, the OS keychain                                                                   |
-| **devtools**                                | nothing                                                                       | logging, crash capture, the viewer — plus dev-only tooling that never reaches a packaged build       |
+| System                                      | The application declares                                                               | Cheshire does — with no application code                                                             |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **design**                                  | which tokens, which mode default, which components it composes                         | the components, the icons, the token contract, light/dark, the switcher                              |
+| [**command**](references/command-system.md) | that a command exists, its title, its default shortcut, where it appears               | the registry, chord matching, the menu bar, context menus, the palette, the shortcuts editor         |
+| **shell**                                   | that a view exists and where it may live                                               | the three zones, the regions, docking, resizing, restore-on-launch, the title bar, the overlay plane |
+| **settings** — schema                       | its own settings: option space, defaults, and whether each may be changed further down | reading, writing, validation, change events                                                          |
+| **settings** — preferences                  | nothing                                                                                | the settings UI, one persistence layer, and the inheritance rule across every system                 |
+| **storage**                                 | a schema and migrations                                                                | the store, transactions, blobs, encryption                                                           |
+| **identity**                                | which provider                                                                         | sign-in, sessions, the OS keychain                                                                   |
+| **devtools**                                | nothing                                                                                | logging, crash capture, the viewer — plus dev-only tooling that never reaches a packaged build       |
 
-> Read the right-hand column as the list of things an application would otherwise be writing. That it is not writing them is the whole promise (principle 1), and it is why a contribution is a **value** rather than a call: values can be validated, rendered, indexed into a palette, and persisted against — a call can only be made.
+> Right-hand column is the list of things an application would otherwise be writing. That it is not writing them is the whole promise (principle 1).
 
-- **A system is reached through its services, and a service through one typed hook.**
+#### **A system is reached through its services, and a service through one typed hook.**
 
-  ```tsx
-  import { useCommands, useSettings } from "@cheshire/app/react";
+```tsx
+import { useCommands, useSettings } from "@cheshire/app/react";
 
-  function Toolbar() {
-  	const commands = useCommands();
-  	const settings = useSettings();
-  	return <button onClick={() => commands.execute("demo.save")} />;
-  }
-  ```
+function Toolbar() {
+	const commands = useCommands();
+	const settings = useSettings();
+	return <button onClick={() => commands.execute("demo.save")} />;
+}
+```
 
-  Each service has one typed, zero-args hook, named for it, imported from `@cheshire/app/react`. Host-side services are handed to the host entry as a context object rather than imported.
+Each service has one typed, zero-args hook, named for it, imported from `@cheshire/app/react`. Host-side services are handed to the host entry as a context object rather than imported.
 
-- **The settings system spans the other systems. It selects among options; it does not add them.**  
-   The owning system defines the option space:
-  - The design system ships the themes,
-  - The command system ships the commands and their default shortcuts,
-  - An application defines the space for its own domain through a settings schema.
+#### **The settings system spans the other systems. It selects among options; it does not add them.**
 
-  The settings system provides selection over those spaces: the UI, the persistence, the inheritance.
+The owning system defines the option space:
 
-  > Adding an option rather than selecting one is an extension, which principle 3 forbids. Choosing among the themes Cheshire ships is a setting; authoring a new one is not.
+- The design system ships the themes,
+- The command system ships the commands and their default shortcuts,
+- An application defines the space for its own domain through a settings schema.
 
-- **A setting is an option space, a default, and whether the next level may change it.**  
-  All three inherit platform → application → user. A level may narrow what it passes on: an application can fix Cheshire's default so the user cannot change it. A setting introduced at the application level has no platform entry to inherit.
+The settings system provides selection over those spaces: the UI, the persistence, the inheritance.
 
-### The application is a customer, not a plugin
+> Adding an option rather than selecting one is an extension, which principle 3 forbids. Choosing among the themes Cheshire ships is a setting; authoring a new one is not.
 
-There is no third-party plugin system (principle 3). Views, commands and menus contributed by an
-application are the platform's ordinary surface.
+#### **A setting is an option space, a default, and whether the next level may change it.**
 
-| A plugin platform needs                                                   | Cheshire needs                                   |
-| ------------------------------------------------------------------------- | ------------------------------------------------ |
-| A manifest file, parsed and validated at runtime                          | Typed values in `src/index.ts`, checked at build |
-| A sandbox per extension — iframes, a `view://` scheme, per-view CSP tiers | One renderer, one policy                         |
-| Trust classes, permission scopes, capability allowlists                   | First-party code throughout                      |
-| An API version handshake between host and extension                       | One version, one lockfile, one build             |
-| Lazy activation events (`onCommand`, `onView`)                            | An import graph the bundler already understands  |
+All three inherit platform → application → user. A level may narrow what it passes on: an application can fix Cheshire's default so the user cannot change it. A setting introduced at the application level has no platform entry to inherit.
 
-Cheshire uses the contribution vocabulary a plugin platform uses: activity bar items, view
-containers, views with a location, panels, status bar items, menus that reference command ids.
-Only the delivery mechanism is absent. Contributions are values the compiler reads, so a typo'd
-command id in a menu is a build error naming the application's own file rather than a runtime
-warning in a log.
+### Application as contributions
+
+Cheshire models the application as a set of contributions — views, commands, menus and more — like a plugin system, with the same nouns (activity bar items, view containers, panels, menus referencing command ids), except that the application is first-party code compiled into one build. So every mechanism a plugin platform needs for untrusted, late-bound, independently versioned code disappears:
+
+| Plugin Platform                   | Cheshire                                         |
+| --------------------------------- | ------------------------------------------------ |
+| manifest parsed at runtime        | typed values in `src/index.ts`, checked at build |
+| sandbox per extension             | one renderer, one policy                         |
+| trust classes / permission scopes | first-party code throughout                      |
+| host↔extension API handshake      | one version, one lockfile                        |
+| lazy activation events            | import graph the bundler already reads           |
+
+**Payoff:** Contributions are values the compiler reads — a typo'd command id in a menu is a build error naming the application's own source, not a runtime warning in a log.
 
 ---
 
@@ -132,17 +130,11 @@ flowchart TB
   UI <-.->|"direct channel<br/>Cheshire brokers it, the app never names it"| HOST
 ```
 
-**The Shell Surface** is what the application contributes to the UI, and it runs in the
-renderer. §3.
+- **The Shell Surface** is what the application contributes to the UI, and it runs in the renderer. §3.
 
-**The Host Surface** is the application's own backend process, and the platform services it calls.
-§4. It exists because an application's backend is not the framework's main process — main is
-privileged, framework-owned, and holds the window and the OS; putting domain code there makes the
-framework's most trusted process exactly as trustworthy as the application in it.
+- **The Host Surface** is the application's own backend process, and the platform services it calls. §4. It exists because an application's backend is not the framework's main process — main is privileged, framework-owned, and holds the window and the OS; putting domain code there makes the framework's most trusted process exactly as trustworthy as the application in it.
 
-**Neither surface names the runtime** (principle 4). No Electron module, no IPC channel, no protocol
-scheme, no `window.cheshire`. The preload bridge is a _membrane_ — a place messages pass through,
-never a place logic lives — and it is framework-private in both directions.
+- **Neither surface names the runtime** (principle 4). No Electron module, no IPC channel, no protocol scheme, no `window.cheshire`. The preload bridge is a _membrane_ — a place messages pass through, never a place logic lives — and it is framework-private in both directions.
 
 ---
 
@@ -190,7 +182,7 @@ The shell's anatomy is **three vertical zones**, plus an overlay plane above all
 │ A │ Primary      │  Editor area           │  Auxiliary    │
 │ c │ side bar     │                        │  side bar     │
 │ t │              │  editors, groups, tabs │               │  ← zone 2
-│ i │ view         │                        │  view         │     THE BODY
+│ i │ view         │                        │  view         │   THE BODY
 │ v │ containers   ├────────────────────────┤  containers   │
 │ i │              │  Panel                 │               │
 │ t │              │                        │               │
@@ -199,86 +191,62 @@ The shell's anatomy is **three vertical zones**, plus an overlay plane above all
 │ STATUS BAR                          contributed items     │  ← zone 3
 └───────────────────────────────────────────────────────────┘
 
-   overlay plane — notifications, dialogs, toasts — floats above all three
+overlay plane — notifications, dialogs, toasts — floats above all three
 ```
 
-**Only the three zones are guaranteed. The body's regions are not.** A template decides which of
-them exist: the `chat` template has no panel, and may have no activity bar either. That is the
-layout service's job, and it is why the middle zone is called _the body_ rather than something
-naming a region inside it.
+> **Only the three zones are guaranteed. The body's regions are not.**
 
-**The invariant that governs all of it:** _an application declares what exists, never what is on
-screen._ A view contribution says a view exists and where it is _allowed_ to live; the shell
-decides where it _is_, which container is expanded, which editor is focused, and how wide the
-sidebar is. That is what leaves layout persistence (stage 3) somewhere to live that an application
-cannot contradict — and it is why an application can never "open the sidebar" as a side effect of
-booting.
+- Which of the body's regions exist is the layout service's concern, not the shell's, and a template sets it in `cheshire.config.ts`. For ex. the `chat` template has no panel, and may have no activity bar.
 
-An application influences what is on screen the same way a user does: **by running a command.**
-`ctx.showView('welcome')` inside a command handler is a request to the shell, not an
-assignment to its state.
+- An application declares what exists, never what is on screen. A view contribution says a view exists and where it may live; the shell decides where it is, which container is expanded, which editor is focused, and how wide the sidebar is. Layout persistence (stage 3) is the shell's own state. An application cannot contradict it, and cannot open the sidebar as a side effect of booting.
+
+- An application changes what is on screen by running a command, the same way a user does. `ctx.showView('welcome')` in a command handler is a request to the shell, not an assignment to its state.
 
 ### 3.3 What Cheshire owns outright, and an application never contributes
 
-- **The title bar and window controls.** Cheshire draws them (stage 2a). An application contributes
-  menus into the strip and nothing else.
-- **The command palette.** Every contributed command appears in it automatically, with its
-  keybinding. There is no "register with the palette" step — that is what one command registry
-  buys.
-- **The keyboard shortcuts editor**, and therefore user rebinding. An application's `shortcut` is
-  a _default_, and the user outranks it.
-- **Layout persistence, docking, resizing, and restore-on-launch.**
-- **Notifications, progress, and dialogs** — services an application _calls_, not regions it fills.
-- **Theming and typography tokens.** Cheshire ships a coherent set; an application extends it rather
-  than assembling its own.
+- The title bar and window controls
+  - Cheshire draws them (stage 2a). An application contributes menus into the strip and nothing else.
+- The command palette
+  - Every declared command appears in it, with its shortcut. An application does nothing to put it there.
+- The keyboard shortcuts editor
+  - A user changes any command's shortcut through it. An application's `shortcut` is a _default_, and the user's binding wins — unless the application declares that default fixed.
+- Layout persistence
+  - Docking, resizing, and restore-on-launch.
+- Notifications, progress, and dialogs
+  - An application calls a service to show one. Cheshire renders it; the application never gets a screen area for these.
+- Theming and typography tokens
+  - Cheshire ships the token contract and the themes. An application selects values within the contract; it adds neither a theme nor a token.
 
 ---
 
 ## 4. The Host Surface — the application's backend
 
-**Nothing here is built.** It is the largest single piece of unbuilt design, and it is what the
-layering diagram is mostly about.
+Nothing in this section is built. It is the largest piece of unbuilt design in Cheshire.
 
 ### 4.1 Why a third process
 
-An application that manages a practice, a ledger, or a case file has a backend: a database,
-migrations, background work, credential handling, sync. Three places it could go, and two are
-wrong:
+An application that manages a practice, a ledger, or a case file has a backend: a database, migrations, background work, credential handling, sync. It can run in one of three places.
 
-- **In the renderer.** It would run inside a sandboxed browser context with no filesystem, and
-  every long operation would compete with the UI for a single thread.
-- **In main.** Main owns the windows, the menus, the OS integration, and the preload membrane. It
-  is the framework's most privileged process. Putting domain code there makes that process exactly
-  as trustworthy as the application inside it, and makes the boundary Cheshire is built on
-  unenforceable.
-- **In its own process.** The application's backend is the application's, with its own lifecycle,
-  its own crash domain, and no privilege over the window.
+- **In the renderer.** A sandboxed browser context with no filesystem, on one thread shared with the UI — every long operation competes with rendering.
+- **In main.** Main owns the windows, the menus, the OS integration, and the preload. Domain code there runs with the framework's own privileges, and the boundary between framework and application stops being enforceable.
+- **In its own process.** Its own lifecycle, its own crash domain, and no privilege over thes window.
 
-So: a **host process**, owned by the application, brokered by Cheshire.
+Cheshire takes the third: a **host process**, owned by the application and brokered by Cheshire.
 
 ### 4.2 The channel
 
-Cheshire brokers a **direct channel** between the renderer and the host at startup, after which
-messages travel between the application's two halves without passing through main's event loop.
+Cheshire brokers a **direct channel** between the renderer and the host at startup, after which messages travel between the application's two halves without passing through main's event loop.
 
-The application never names the transport. It writes a call and gets a result; whether that is a
-`MessagePort`, a socket, or something a Tauri backend provides is Cheshire's business and changes at
-phase 4 without the application noticing. This is principle 4 applied to the backend rather than to
-the window.
+The application never names the transport. It writes a call and gets a result; whether that is a `MessagePort`, a socket, or something a Tauri backend provides is Cheshire's business, and it changes at phase 4 without the application noticing. Principle 4 applies to the backend as it does to the window.
 
-Two consequences worth stating plainly:
+Two consequences:
 
-- **Main no longer sees application calls.** It observes the resource access the host performs,
-  not the intent behind it. Under principle 3 — the application is the only extension — this is not a security
-  hole, but it is an auditing question that phase 3 has to answer deliberately.
-- **Two channels will exist**: the application's own, and Cheshire's framework-private bridge. Their
-  boundary has to stay legible, or an application author reaches for the wrong one. Cheshire's is not
-  reachable from application code at all, which is most of the answer.
+- **Main does not see application calls.** It observes the resource access the host performs, not the intent behind it. The application is the only extension (principle 3), so this is not a security hole. What it means for auditing is §7 item 7.
+- **Two channels exist**: the application's own, and Cheshire's framework-private bridge. Application code cannot reach Cheshire's at all, so the two cannot be confused.
 
 ### 4.3 What the application writes
 
-The same rule as everywhere else — **the framework owns the entry.** The application supplies a
-module; Cheshire imports it, wires it, and starts it. Sketch, not a committed API:
+The framework owns the entry, as everywhere else. The application supplies a module; Cheshire imports it, wires it, and starts it. Sketch, not a committed API:
 
 ```ts
 // src/host/index.ts — the application's backend, one module
@@ -296,9 +264,11 @@ export default defineHost({
 });
 ```
 
-…reached from a view as a typed client, with no transport in sight:
+Reached from a view as a typed client:
 
 ```tsx
+import { useHost } from "@cheshire/app/react";
+
 const host = useHost(); // typed from the host module's `api`
 const patients = await host.listPatients("smith");
 ```
@@ -307,44 +277,51 @@ const patients = await host.listPatients("smith");
 
 ## 5. Where each service runs, and when it lands
 
-**What each service _is_ belongs to [design & roadmap](design-and-roadmap.md) §3, which owns that
-list.** This table adds the two things nothing else records — **which zone** a service runs in, and
-**when** it arrives — and deliberately does not restate what any of them do.
+What each service does belongs to [design & roadmap](design-and-roadmap.md) §3, which owns that
+list. This table adds three things: which process a service runs in, how an application reaches
+it, and when it arrives.
 
-Renderer-side services reach an application as one typed hook each, from `@cheshire/app/react`;
-host-side services are handed to the host entry as a context object. Nothing is reached by
-importing a runtime module or by touching a global.
+The processes are the three of §4.1 — renderer, main, host. Nothing is reached by importing a
+runtime module or by touching a global; a dash means an application does not reach the service at
+all.
 
-| System            | Service                         | Zone                               | Status                                 |
-| ----------------- | ------------------------------- | ---------------------------------- | -------------------------------------- |
-| _(foundation)_    | **config**                      | build-time                         | ✅                                     |
-| **shell**         | **window chrome**               | renderer ↔ main, framework-private | ◐ stage 2a                             |
-| **shell**         | **layout**                      | renderer                           | ○ stage 3 / phase 2                    |
-| **shell**         | **notifications · dialogs**     | renderer                           | ○ phase 2                              |
-| **shell**         | **status bar**                  | renderer                           | ○ phase 2                              |
-| **command**       | **commands**                    | renderer                           | ◐ stage 2b                             |
-| **command**       | **shortcuts**                   | renderer                           | ◐ stage 2b                             |
-| **command**       | **menus**                       | renderer                           | ◐ stage 2b                             |
-| **design**        | **components · icons · tokens** | renderer                           | ○ phase 2–3                            |
-| **settings**      | **schema**                      | both                               | ○ phase 3                              |
-| **settings**      | **preferences**                 | both                               | ○ phase 3                              |
-| **storage**       | **db**                          | host                               | ○ phase 3                              |
-| **storage**       | **blob**                        | host                               | ○ phase 3                              |
-| **identity**      | **auth**                        | host                               | ○ phase 3                              |
-| **identity**      | **credentials**                 | host                               | ○ phase 3                              |
-| **devtools**      | **diagnostics**                 | both                               | ○ phase 3 — **ships**                  |
-| **devtools**      | **developer tooling**           | renderer                           | ○ phase 3 — **stripped when packaged** |
-| _(runtime)_       | **update**                      | main                               | ○ phase 3                              |
-| _(runtime)_       | **runtime interfaces**          | all                                | ○ phase 4, validated by the Tauri port |
+| System         | Service                         | Runs in         | Reached from            | Status                                 |
+| -------------- | ------------------------------- | --------------- | ----------------------- | -------------------------------------- |
+| _(foundation)_ | **config**                      | build-time      | `cheshire.config.ts`    | ✅                                     |
+| **shell**      | **window chrome**               | renderer + main | — framework-private     | ◐ stage 2a                             |
+| **shell**      | **layout**                      | renderer        | `useLayout()`           | ○ stage 3 / phase 2                    |
+| **shell**      | **notifications · dialogs**     | renderer        | `useNotifications()`    | ○ phase 2                              |
+| **shell**      | **status bar**                  | renderer        | `defineApp` · hook      | ○ phase 2                              |
+| **command**    | **commands**                    | renderer        | `defineApp` · `useCommands()` | ◐ stage 2b                       |
+| **command**    | **shortcuts**                   | renderer        | `defineApp`             | ◐ stage 2b                             |
+| **command**    | **menus**                       | renderer        | `defineApp`             | ◐ stage 2b                             |
+| **design**     | **components · icons · tokens** | renderer        | `@cheshire/app/ui`      | ○ phase 2–3                            |
+| **settings**   | **schema**                      | main            | `defineApp`             | ○ phase 3                              |
+| **settings**   | **preferences**                 | main            | `useSettings()` · host `ctx` | ○ phase 3                         |
+| **storage**    | **db**                          | host            | host `ctx`              | ○ phase 3                              |
+| **storage**    | **blob**                        | host            | host `ctx`              | ○ phase 3                              |
+| **identity**   | **auth**                        | host            | host `ctx`              | ○ phase 3                              |
+| **identity**   | **credentials**                 | host            | host `ctx`              | ○ phase 3                              |
+| **devtools**   | **diagnostics**                 | every process   | hook · host `ctx`       | ○ phase 3 — **ships**                  |
+| **devtools**   | **developer tooling**           | renderer        | — dev-only              | ○ phase 3 — **stripped when packaged** |
+| _(runtime)_    | **update**                      | main            | —                       | ○ phase 3                              |
+| _(runtime)_    | **runtime interfaces**          | every process   | —                       | ○ phase 4, validated by the Tauri port |
 
-**Two rows are not systems**, and are marked so: `config` is the foundation an application seats
-into, and the `_(runtime)_` pair sits beneath every system rather than inside one. A **system** is
-a capability an application declares into ([design & roadmap](design-and-roadmap.md) §3), and
-neither of these is.
+Settings runs in main because only the user level is persisted state — platform and application
+defaults are constants compiled into their packages, and are never written anywhere. One store,
+owned by main: it is alive before the renderer, alive whether or not a template declares a host,
+and framework-owned. The renderer and the host read resolved values through their own service.
 
-**Never available to an application, in any phase:** `electron` and its modules, node builtins from
-the renderer, IPC channel names, protocol schemes, `window.cheshire`, or the preload. Enforced from
-day one, and the reason the phase-4 port is a port rather than a rewrite.
+Layout state is not settings and does not share the store. It is machine-written, the layout
+service owns it, and it arrives at stage 3.
+
+Two rows are not systems, and are marked so. `config` is build-time foundation; the `_(runtime)_`
+pair sits beneath every system rather than inside one. A system is a capability an application
+declares into ([design & roadmap](design-and-roadmap.md) §3), and neither of these is.
+
+Never available to an application, in any phase: `electron` and its modules, node builtins in the
+renderer, IPC channel names, protocol schemes, `window.cheshire`, and the preload. Enforced from
+day one, which is what makes the phase-4 work a port rather than a rewrite.
 
 ## 6. How the surface maps onto the roadmap
 
@@ -353,11 +330,11 @@ day one, and the reason the phase-4 port is a port rather than a rewrite.
 | **1 — Foundation** ✅         | Generate, dev, build, package. Contribute a view.                                                                                                                                                                                    |
 | **2 — Workbench** ◐           | The command system: commands, keybindings, menus, context menus, the palette · the full region set: activity bar, both sidebars, editor area, panel, status bar · docking and layout persistence · the design system and its tokens. |
 | **3 — Productivity** ○        | Settings · the host process and its channel · storage, blob, credentials · logging and diagnostics · testing utilities.                                                                                                              |
-| **4 — Runtime abstraction** ○ | Nothing new to the application, and that is the point: the runtime interfaces land beneath an unchanged surface, and a Tauri prototype proves it by porting.                                                                         |
+| **4 — Runtime abstraction** ○ | Nothing new. The runtime interfaces land beneath an unchanged surface, and a Tauri prototype ports onto them.                                                                                                                         |
 
-Milestone A — the acceptance scenario in [design & roadmap](design-and-roadmap.md) §12 — is the
-first honest slice through the phase-2 column: one view, one command, one menu, one shortcut, and
-a layout that survives a restart.
+Milestone A — the acceptance scenario in [design & roadmap](design-and-roadmap.md) §12 — is a
+slice through the phase-2 column: one view, one command, one menu, one shortcut, and a layout that
+survives a restart.
 
 ---
 
@@ -365,55 +342,58 @@ a layout that survives a restart.
 
 Surfaced, not decided. Each is hard to reverse and belongs to the stage that builds it.
 
-**A point leaves this list by being settled in the system's own reference, not by being edited
-away here.** First instance: whether a command's applicability is a string expression or a
-predicate function — settled as a predicate, and never a string, in
-[the command system](references/command-system.md) §7. The reasoning generalises to anything this
-list touches: a string form persists and a function does not, so the string is the choice that
-cannot be taken back.
+A point leaves this list by being settled in the system's own reference, not by being edited away
+here. The first: whether a command's applicability is a string expression or a predicate function,
+settled as a predicate in [the command system](references/command-system.md) §7. A string form
+gets persisted and a function does not, so the string is the choice that cannot be taken back —
+and that reasoning applies to anything on this list.
 
-> Two earlier items on this list are now settled by the template decision in
-> [design & roadmap](design-and-roadmap.md) §4: a template is a **configuration of Cheshire's
-> systems, declared in `cheshire.config.ts`**. So "is the host opt-in" and "does Cheshire ship a store"
-> both answer themselves — a template can only switch on a system Cheshire ships, and switching it
-> on is a declaration. What survives of each is the _shape_ of that declaration, below.
+> Two earlier items are settled by the template decision in
+> [design & roadmap](design-and-roadmap.md) §4: a template is a configuration of Cheshire's
+> systems, declared in `cheshire.config.ts`. A template can only switch on a system Cheshire
+> ships, and switching it on is a declaration — so "is the host opt-in" and "does Cheshire ship a
+> store" are both answered. What remains of each is the shape of that declaration, below.
 
 1. **What does the host declaration look like, and what does it cost when absent?** A template
    that declares no host should produce an application that never starts a third process — the
    declaration has to reach packaging, not just runtime.
 2. **What is the store's contract?** Cheshire ships the store (settled above), so the open question
-   is its surface: schema and migration format, transaction shape, and — the part that is
-   genuinely hard to reverse — where encryption and key management sit.
+   is its surface: schema and migration format, transaction shape, and — hardest to reverse —
+   where encryption and key management sit.
 3. **Does Cheshire ship authentication, or only credential storage?** Keychain-backed secrets are
-   clearly platform. A session and identity model may be the application's.
+   platform. A session and identity model may be the application's.
 4. **Does a view declare its location, or does a view container?** VS Code puts it on the
-   container. It decides how an application expresses "this view can be in the sidebar or the
-   panel".
+   container. The answer decides how an application expresses "this view can be in the sidebar or
+   the panel".
 5. **How is a settings schema written** — a builder, JSON Schema, or inferred from plain
-   TypeScript types? It is a persisted format as well as an API, so it is the hardest to change
-   on this list. Whatever the form, it carries three things per setting — the option space, the
-   default, and whether the next level may change it (§1) — so a schema designed without the third
+   TypeScript types? It is a persisted format as well as an API, so it is the hardest to change on
+   this list. Whatever the form, it carries three things per setting — the option space, the
+   default, and whether the next level may change it (§1) — and a schema designed without the third
    cannot gain it later without a format change.
 6. **Does the host's `api` object become the published call surface**, or does an application
    register named capabilities? The first is more direct; the second is easier to version.
+7. **What does auditing look like when main cannot see application calls?** The direct channel
+   puts main out of the path (§4.2), so a record of what an application did has to come from the
+   host, from the platform services it calls, or not exist. Phase 3.
 
 ---
 
 ## 8. Vocabulary this document adds
 
-| Term                        | Meaning                                                                                                                                                                                           |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Term                        | Meaning                                                                                                                                                                                      |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **system**                  | A coherent capability Cheshire ships whole — design, command, shell, settings, storage, identity, devtools. An application declares into one, through its services; it never implements one. |
-| **the application surface** | `@cheshire/app` — the one package an application imports, on entries per system. The packages behind it are named here for identity, never as imports.                                            |
-| **the design system**       | Components, icons, and the token contract. `@cheshire/ui`, reached as `@cheshire/app/ui`.                                                                                                         |
-| **the command system**      | Commands, shortcuts, menus, context menus, the palette. A menu item is a command reference. Mechanics: [reference](references/command-system.md).                                                 |
-| **the Shell Surface**       | What an application contributes to the UI. Views, commands, menus — everything that runs in the renderer.                                                                                         |
-| **the shell**               | The root of the renderer: title bar, body, status bar, and the overlay plane. `@cheshire/shell`.                                                                                                  |
-| **the body**                | The shell's middle zone, which holds the regions. Named to avoid colliding with _activity bar_.                                                                                                   |
-| **the Host Surface**        | The application's own backend process, and the platform services it calls.                                                                                                                        |
-| **host process**            | The third process. Application-owned, Cheshire-brokered, no privilege over the window.                                                                                                            |
-| **the membrane**            | The preload. Messages pass through it; logic never lives in it. Framework-private.                                                                                                                |
-| **region**                  | A named area of the body — activity bar, side bars, editor area, panel. Which regions exist is per-template, not fixed.                                                                           |
-| **view container**          | A titled group of views, placed in a region by the shell.                                                                                                                                         |
+| **contribution**            | A view, command, menu item or the like, declared by an application into a system through Cheshire's contract in `src/index.ts`. The kinds: §3.1.                                             |
+| **the application surface** | `@cheshire/app` — the one package an application imports, on entries per system. The packages behind it are named here for identity, never as imports.                                       |
+| **the design system**       | Components, icons, and the token contract. `@cheshire/ui`, reached as `@cheshire/app/ui`.                                                                                                    |
+| **the command system**      | Commands, shortcuts, menus, context menus, the palette. A menu item is a command reference. Mechanics: [reference](references/command-system.md).                                            |
+| **the Shell Surface**       | What an application contributes to the UI. Views, commands, menus — everything that runs in the renderer.                                                                                    |
+| **the shell**               | The root of the renderer: title bar, body, status bar, and the overlay plane. `@cheshire/shell`.                                                                                             |
+| **the body**                | The shell's middle zone, which holds the regions. Named to avoid colliding with _activity bar_.                                                                                              |
+| **the Host Surface**        | The application's own backend process, and the platform services it calls.                                                                                                                   |
+| **host process**            | The third process. Application-owned, Cheshire-brokered, no privilege over the window.                                                                                                       |
+| **the membrane**            | The preload. Messages pass through it; logic never lives in it. Framework-private.                                                                                                           |
+| **region**                  | A named area of the body — activity bar, side bars, editor area, panel. Which regions exist is per-template, not fixed.                                                                      |
+| **view container**          | A titled group of views, placed in a region by the shell.                                                                                                                                    |
 
 The rest of the vocabulary is in [framework-architecture](references/framework-architecture.md) §7.

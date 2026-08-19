@@ -102,8 +102,8 @@ bundle as the shell, so there is no "before it loads" — and the split collapse
 | Registry | two maps merged on read, plus a remote executor | one map |
 | A typo'd id | a runtime warning in a log | a build error naming `src/index.ts` |
 
-Which is the concrete form of *same words, no manifest*, and of why a contribution is a value
-rather than a call — [the application surface](../application-surface.md) §1.
+Cheshire keeps the contribution vocabulary and drops the delivery mechanism, which is what makes a
+contribution a value rather than a call — [the application surface](../application-surface.md) §1.
 
 ### The id
 

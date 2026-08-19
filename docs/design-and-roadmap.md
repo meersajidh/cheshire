@@ -345,6 +345,9 @@ This decomposition is **fairly settled**
 - It does not own the other systems' defaults — it **aggregates** them.
 - The command system owns the keybinding registry and an application's default shortcuts. The settings system owns the resolved value, the single persistence layer, and the UI. Same for theme selection and region sizes.
 - A setting is an option space, a default, and whether the next level may change it. All three inherit **platform → application → user**.
+- **Only the user level is persisted**, so the three levels are not three stores. Platform and application defaults are constants compiled into their packages and are never written anywhere.
+- **The store runs in main.** It is alive before the renderer, and alive whether or not a template declares a host. The renderer and the host read resolved values through their own service.
+- **Layout state is not settings** and does not share the store. It is machine-written and the layout service owns it.
 
 ### storage ○ phase 3
 

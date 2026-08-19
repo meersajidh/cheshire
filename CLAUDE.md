@@ -78,14 +78,22 @@ window controls.
 **The design-document review is in progress.** `principles.md` and `design-and-roadmap.md` have
 both had the **owner review** (2026-08-13/15); the earlier 16-fix pass over design-and-roadmap is
 a separate, closed record at `.local/plans/design-and-roadmap-fixes.md`.
-**`application-surface.md` is next, then `docs/references/`**; working file
-`.local/plans/application-surface-review.md`.
+**`application-surface.md` is mid-review — §1 done (2026-08-18), §2 next**; working file
+`.local/plans/application-surface-review.md`. Then `docs/references/`.
 
 Distinguish two things that are easy to conflate, and were: an **owner review** is the owner
 reading and asking, with the answers becoming fixes. An **audit pass** is me reading for
-correctness. `application-surface.md`, framework-architecture and codebase-tour have had the
-audit — they were refreshed after the package split — and **not** the review. Only the review finds the things no gate and no
+correctness. framework-architecture and codebase-tour have had the audit — they were refreshed
+after the package split — and **not** the review. Only the review finds the things no gate and no
 audit can: a decision that is wrong rather than stale.
+
+**Held until the owner reaches those sections, at their instruction:** four things the document
+never mentions — Shell-side lifecycle (Host has `start(ctx)`, Shell has no hook), error boundaries
+when application code throws, the one-line `editor` contribution, and multiple windows.
+
+**Per-system references, in order after the review:** shell (stage 2a is shell work, and §7 item 4
+is its own), then settings (§7 item 5, the schema format, hardest to reverse), then the Host
+Surface (§7 items 1, 6 and 7, plus §4.2). Then design, storage, identity, devtools.
 
 **What the review changed, and what it taught.** `principles.md` went 95 → 58 lines: every
 principle now names something a design decision can *contradict*, and what came out was padding
@@ -97,17 +105,20 @@ lost its condensation of the principles (§3), renamed its "four systems" to **f
 Capabilities now **owns the systems/services table** that `application-surface.md` used to
 duplicate.
 
-**Two lessons worth keeping.** A cite that names a *mechanism* survives a rewrite; a cite that
+**Three lessons worth keeping.** A cite that names a *mechanism* survives a rewrite; a cite that
 quotes a *phrasing* does not — 8 principle cites in `packages/` came through untouched while 13
-in prose broke. And numeric `§` cross-references break silently: renumbering cost 11 pointers
-across 5 files, and no gate sees any of them.
+in prose broke, and rewriting one paragraph of `application-surface.md` §1 broke a fresh
+phrasing cite in `command-system.md` the same day. Numeric `§` cross-references break silently:
+renumbering cost 11 pointers across 5 files, and no gate sees any of them. And a **reference is
+only correct while the layering above it holds still** — `command-system.md` drifted seven hours
+after it was written, because a decision in §1 of the document it cites as upstream moved.
 
 **Naming, settled 2026-08-15: the product is `Cheshire`, the package/command/repo is
 `cheshire`** — exactly React/react. Prose takes the capital; identifiers, log prefixes, usage
 banners, paths and repo names stay lowercase. Rendered diagram labels count as prose.
 
 **Stage 2 waits for the review** (`.local/plans/stage-2.md`, Part 1). `application-surface.md` §7
-holds six decision points; two touch stage 2 — whether a view or its container declares location,
+holds seven decision points; two touch stage 2 — whether a view or its container declares location,
 and how a settings schema is written (a persisted format, so the hardest on the list to change
 later).
 
@@ -247,6 +258,13 @@ and never implements one. **`workbench` is now a template name only** — the pa
   an option space, a default, and whether the next level may change it; all three inherit
   **platform → application → user**. Named `settings`, not `customization` (2026-08-18) —
   customization implies authoring, and the system covers platform and application levels too.
+- **Only the user level is persisted, and its store is main's** (2026-08-19). Platform and
+  application defaults are constants compiled into their packages and are never written anywhere,
+  so the three inheritance levels are not three storage locations. Main owns the one store: it is
+  alive before the renderer and alive whether or not a template declares a host, which rules the
+  host out. Layout state is not settings and does not share the store — VS Code's split between
+  human-edited `settings.json` and machine-written `state.vscdb`, and ru-soam's between
+  `localStorage` chrome prefs and the `prefs@1.0` capability, are the same line drawn twice.
 
 ## Locked decisions — published surface, do not relitigate
 
