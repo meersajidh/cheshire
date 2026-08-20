@@ -1,25 +1,24 @@
 # Codebase tour
 
-> **What this is.** A walk through Cheshire's code in the order it actually runs. It follows one
+> **What this is.** A walk through Cheshire's code in the order it runs. It follows one
 > `pnpm dev` from the developer's keystroke to a painted window, then `build` and `package` to an
-> installable application, naming the file and line at each step.
+> installable application, naming the file and symbol at each step.
 >
 > **Who it is for.** A new engineer on this team, on their first day in the repository. It
 > assumes [framework-architecture](framework-architecture.md) has been read — that document
 > explains _why_ the shape is this shape; this one shows you the shape.
 >
-> **Status.** Accurate at the close of **stage 1**; refreshed 2026-08-11 after the package split.
-> The codebase is small on purpose: about 1,660 lines of framework source across six packages.
-> You can read all of it in an afternoon, and this tour is a suggestion for the order.
+> **Status.** Accurate at the close of **stage 1**; refreshed 2026-08-19. The codebase is small on
+> purpose — six packages you can read in an afternoon, and this tour is a suggestion for the order.
 >
 > Cites are `path:symbol` and carry no line numbers — a line cite rots on any edit above it and
 > nothing can check it, while `scripts/check-cites.mjs` verifies every symbol cite on each
 > `pnpm check`. Resolve them by search: `grep -n "function loadApp"`, `Ctrl-T` in VS Code, `gd`
 > with a language server.
 >
-> **A warning about scale.** Cheshire's design documents describe *systems* — a design system, a
-> command system, storage, settings — and almost none of that is code yet. This tour is the honest
-> counterweight: it walks what exists. When the two disagree, the code is right and
+> **On scale.** Cheshire's design documents describe *systems* — a design system, a command
+> system, storage, settings — and almost none of that is code yet. This tour walks what exists.
+> When the two disagree, the code is right and
 > [the application surface](../application-surface.md) is intent.
 
 ---
@@ -27,9 +26,8 @@
 ## How to read it
 
 Open the repository beside this document. Every reference is `path:symbol`, and every claim is
-something you can check by opening the file. Where the tour says a thing is _not_ built, that is
-also worth checking — the roadmap leaves deliberate gaps, and knowing which gaps are deliberate is
-half of onboarding.
+something you can check by opening the file. Check the claims that a thing is _not_ built too: the
+roadmap leaves deliberate gaps, and which gaps are deliberate is worth learning early.
 
 Two commands before you start:
 
@@ -93,8 +91,7 @@ Split by who runs the code, which is the split that matters when you are looking
 **By runtime environment.** `@cheshire/core/views` holds the contribution contract, which names
 React's `ComponentType`; the barrel stays React-free because `@cheshire/runtime-electron` imports
 it from Electron's main process. With `skipLibCheck` on, an unresolved `react` inside a `.d.ts`
-silently becomes `any` rather than failing, so the separation is the only thing keeping that
-honest.
+silently becomes `any` rather than failing, so the separation is the only thing that catches it.
 
 **By audience.** A public entry is *exactly* the application-facing API; framework-internal API
 sits on a matching `internal` entry. `defineConfig` and `defineApp` are public; `resolveConfig`
@@ -103,8 +100,8 @@ call those. Crossing the two splits gives `.`, `./internal`, `./views`, `./views
 
 That audience split is what lets `@cheshire/app` be two `export *` lines rather than a hand-kept
 list of names. A forwarding list drifts in the one direction nothing catches: a symbol added
-upstream is simply absent downstream, with no error anywhere. Forwarding a whole entry cannot
-drift, and it is safe only because the entry contains nothing an application should not see.
+upstream is absent downstream, with no error anywhere. Forwarding a whole entry cannot drift, and
+it is safe only because the entry contains nothing an application should not see.
 
 `templates/workbench` is deliberately **not** a workspace package. If it were, its dependencies
 would resolve to framework _source_ through workspace links, and the one artifact meant to prove
@@ -121,7 +118,7 @@ those two words.
 
 `packages/cli/src/cli.ts` — a shebang, a switch, and an error handler.
 
-The error handler at the bottom is the part worth noticing:
+The error handler at the bottom:
 
 ```ts
 if (error instanceof CheshireCliError) {
@@ -139,7 +136,7 @@ stack. When you add a CLI failure path, that is the choice you are making.
 
 ### 2. Finding and reading the application
 
-`packages/cli/src/app.ts:loadApp()` — `loadApp()`.
+`packages/cli/src/app.ts:loadApp()`.
 
 ```ts
 const { module } = await runnerImport<{ default?: CheshireConfig }>(configPath)
@@ -175,8 +172,7 @@ the audience split.
 
 ### 3. Generating `.cheshire/`
 
-`packages/cli/src/generate.ts:generate()` — `generate()` writes seven files and returns the paths worth
-naming.
+`packages/cli/src/generate.ts:generate()` writes seven files and returns the paths worth naming.
 
 | File | What it is |
 | --- | --- |
@@ -224,8 +220,8 @@ Development reads the environment because the dev server's port is not known whe
 written — the server has not started yet. A packaged app has no CLI to hand it anything, so
 everything is baked in and the renderer is found relative to the bundle it ships beside.
 
-`tsconfig()` at `generate.ts:tsconfig()` has the highest trap-per-line ratio in the repository; its
-comment names all three traps. Do not "clean up" the explicit `include` list.
+`generate.ts:tsconfig()` carries three traps in a dozen lines, and its comment names all three. Do
+not "clean up" the explicit `include` list.
 
 ### 4. The dev server
 
@@ -251,28 +247,27 @@ window load races the port (`dev.ts:dev()`).
 
 `packages/cli/src/electron.ts`.
 
-`ensureElectronBinary():33` checks for the binary and downloads it if missing. This is not
+`electron.ts:ensureElectronBinary()` checks for the binary and downloads it if missing. This is not
 defensive coding — electron 43 declares **no postinstall**. It ships its downloader as a bin
 (`install-electron`) and expects someone to call it, and nobody does. Without this function a
 generated app's first `pnpm dev` dies on a cryptic missing-path error from inside
 `electron/index.js`.
 
-`devLaunchFlags():72` is the most-commented function in the repository, for good reason. Read the
-comment. The short version: `--no-sandbox` is **dev-only, Linux-only**, it is required because
-nothing SUIDs `chrome-sandbox` inside `node_modules`, and it is a **different setting** from
-`webPreferences.sandbox`, which stays `true` everywhere. If you ever find yourself simplifying
-that platform check, the comment is addressed to you.
+`electron.ts:devLaunchFlags()` carries the longest comment in the repository. Read it. The short
+version: `--no-sandbox` is **dev-only, Linux-only**, it is required because nothing SUIDs
+`chrome-sandbox` inside `node_modules`, and it is a **different setting** from
+`webPreferences.sandbox`, which stays `true` everywhere. If you are about to simplify that
+platform check, the comment is addressed to you.
 
-`launchElectron():87` spawns the binary with the generated entry and passes the config and dev URL
-through `CHESHIRE_RUNTIME_OPTIONS`.
+`electron.ts:launchElectron()` spawns the binary with the generated entry and passes the config
+and dev URL through `CHESHIRE_RUNTIME_OPTIONS`.
 
 ### 6. The main process
 
-`packages/runtime-electron/src/main.ts` — 77 lines, and the only file in Cheshire that imports
-`electron`.
+`packages/runtime-electron/src/main.ts` — the only file in Cheshire that imports `electron`.
 
-`start(options):59` sets the app name and identifier, waits for `whenReady`, and creates a window.
-`createWindow():21` is where the security posture lives:
+`main.ts:start()` sets the app name and identifier, waits for `whenReady`, and creates a window.
+`main.ts:createWindow()` is where the security posture lives:
 
 ```ts
 webPreferences: {
@@ -294,7 +289,7 @@ about Vite. It is handed a plain object and starts. That is what makes it packag
 
 The generated `renderer.tsx` calls `mountShell` from
 `packages/shell/src/mount.tsx:mountShell()`, which validates the app's default export with `resolveApp`,
-sets `document.title` from the config, and renders `<Workbench>` into `#root` inside
+sets `document.title` from the config, and renders `<Shell>` into `#root` inside
 `<StrictMode>`.
 
 `MountOptions.app` is typed `unknown`, deliberately. `defineApp` already checks the shape at the
@@ -314,8 +309,7 @@ somewhere to live that an app cannot contradict.
 `shell.css` is plain CSS with custom properties and a `prefers-color-scheme` block. No
 Tailwind, no CSS-in-JS: the shell ships as a stylesheet a consumer imports.
 
-**You now have a window, with the application's view in it.** Total framework code executed: on
-the order of 400 lines.
+**You now have a window, with the application's view in it.**
 
 ---
 
@@ -347,9 +341,9 @@ forced so the entry is unambiguously ESM to Electron regardless of the surroundi
 
 ## Part 3 — `pnpm package`
 
-`packages/cli/src/pack.ts:packageApp()` — `packageApp()` builds, then hands the result to electron-builder's
-programmatic API. `builderConfig():44` is the whole configuration, derived from the app's config;
-nothing is authored by the app.
+`packages/cli/src/pack.ts:packageApp()` builds, then hands the result to electron-builder's
+programmatic API. `pack.ts:builderConfig()` is the whole configuration, derived from the app's
+config; nothing is authored by the app.
 
 Four entries there are load-bearing:
 
@@ -361,8 +355,8 @@ resolves it from its own dependency and passes it in (`pack.ts:electronVersion()
 negation is not redundant: electron-builder collects production dependencies in a pass of its own,
 _outside_ these patterns. An application does name production dependencies — `@cheshire/app`,
 `react`, `react-dom` — so the pass has entries to walk, and without the negation their trees land
-in the asar. Measured during stage 0, when the tooling itself was reachable that way: 74 MB
-versus 396 KB.
+in the asar. Measured during stage 0, when the tooling itself was reachable that way, the asar
+came out two orders of magnitude larger.
 
 **`extraMetadata`.** Sets `main` to the bundled entry, and `desktopName` so Linux desktop
 environments can associate the running window with its launcher via WM_CLASS.
@@ -376,7 +370,7 @@ Verify the result yourself:
 
 ```bash
 pnpm package --dir                                       # unpacked, no installer toolchain
-du -sh dist/linux-unpacked/resources/app.asar            # ~396K
+du -sh dist/linux-unpacked/resources/app.asar
 npx --yes @electron/asar list dist/linux-unpacked/resources/app.asar
 ```
 
@@ -395,7 +389,7 @@ there, one of the two defences above has broken.
 
 `packages/create-cheshire/src/`. Four small files.
 
-- **`identity.ts:deriveIdentity()`** — `deriveIdentity()` turns one typed word into `name`, `appId` and
+- **`identity.ts:deriveIdentity()`** — turns one typed word into `name`, `appId` and
   `productName`. The guesses land in `cheshire.config.ts` as ordinary editable values, rather than
   behind prompts nobody wants to answer before seeing the app run once.
 - **`scaffold.ts:scaffold()`** — copies the template, restores `.gitignore`, and substitutes `{{tokens}}`.
@@ -422,18 +416,16 @@ from another — and when both hold the same version, that resolves cleanly and 
 
 ## Part 5 — the proof gate
 
-**This is the part of the process most likely to feel like overhead and most likely to save you.**
-
-The rule: _never trust a workspace link_. Links resolve source
-paths, so a package whose `exports` point at a `.ts` file — or one that ships with no type
-declarations at all — works perfectly through a link and fails on every real install.
+The rule: _never trust a workspace link_. Links resolve source paths, so a package whose `exports`
+point at a `.ts` file — or one that ships with no type declarations at all — works perfectly
+through a link and fails on every real install.
 
 **And never trust proximity either.** A consumer generated _inside_ this repository is not an
 independent consumer. `.local/gate/demo` used to live here and inherited the framework's own
 `allowBuilds: { electron: true }`; the template shipped no allowlist at all, and every gate passed
 anyway. The first application generated outside the repository installed cleanly and then had no
 Electron binary to launch, because pnpm 10+ silently skips a dependency's install scripts unless
-they are named. So the gate lives outside this repository — the playground is at
+they are named. So the gate lives outside this repository: the playground is
 `~/Repos/msh/play-cheshire/`, and every generated application lives under it.
 
 **The local registry is the whole loop.** There is one way to get Cheshire into a consumer, and
@@ -500,8 +492,8 @@ pnpm registry:publish                                    # build → stamp → p
 
 `<consumer>` is any generated application under `~/Repos/msh/play-cheshire/`.
 
-**`--latest` is not optional, and the reason is a trap worth knowing.** A plain `pnpm update`
-resolves the caret range correctly — and then rewrites the specifier as an exact pin:
+**`--latest` is not optional.** A plain `pnpm update` resolves the caret range correctly — and
+then rewrites the specifier as an exact pin:
 
 ```
 before:  "@cheshire/app": "^0.1.3-dev.20260807182514"
@@ -533,11 +525,11 @@ prerelease range that every later dev publish satisfies.
 The trap the stamping does _not_ remove:
 
 **Framework source is never in a consumer's dev module graph.** After editing framework code you
-must publish again. Skip it and your change simply does not appear, with nothing said about why —
-which is exactly why the script builds before it publishes rather than trusting `dist/`.
+must publish again. Skip it and your change does not appear, with nothing said about why — which
+is why the script builds before it publishes rather than trusting `dist/`.
 
-The working consumers live outside this repository — a gate directory alongside it, and
-`play-cheshire` for anything longer-lived. Nothing inside `.local/` is a consumer any more.
+Every consumer lives outside this repository, under `~/Repos/msh/play-cheshire/`. Nothing inside
+`.local/` is a consumer.
 
 ---
 
@@ -549,16 +541,16 @@ What stage 2 and beyond will touch, and what is deliberately empty today:
 | --- | --- | --- |
 | `AppDefinition` | `views` | Stage 2: `commands` and `menus` — the command system's contract |
 | `ViewContribution` | `id`, `title`, `component` | Icons, placement, per-view state |
-| Active view | `useState` in `Workbench` | Stage 3: persisted across restarts |
+| Active view | `useState` in `Shell` | Stage 3: persisted across restarts |
 | `CheshireConfig` | `appId`, `productName`, `window` | A `services` block — how a template declares which systems are switched on |
 | `@cheshire/runtime-electron` | One window, **no IPC and no preload** | Stage 2a: a preload membrane, window controls, a CSP |
 | Design system | Hand-written CSS in `@cheshire/shell` | `@cheshire/ui` — components, icons, a two-layer token contract |
 | Host process | Does not exist | The application's own backend, brokered by Cheshire (surface doc §4) |
 | Runtime abstraction | Electron named directly, inside the runtime package | Phase 4, validated by a Tauri port |
 
-Read that table against [the application surface](../application-surface.md) and the size of the
-gap is the point: the right-hand column is design, the left is code. Nothing in the right column
-is load-bearing until a stage builds it.
+Read that table against [the application surface](../application-surface.md): the right-hand
+column is design, the left is code. Nothing in the right column is load-bearing until a stage
+builds it.
 
 And the gaps that are gaps rather than seams — worth fixing when they get in your way, not before:
 no application icon in a packaged build, and no watch on the main process during `dev`.

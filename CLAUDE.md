@@ -109,7 +109,7 @@ change with the stage.
 ## Gates
 
 `pnpm check` is the full gate, plus the proof gate above at milestone boundaries. Currently: lint ·
-6 builds · 6 typechecks · 29 tests · 44 cites · 6 packages placed · 21 manifest paths. Run it
+6 builds · 6 typechecks · 29 tests · 50 cites · 6 packages placed · 21 manifest paths. Run it
 rather than trusting these numbers.
 
 Three are scripts, each written because something silent got through. **`check-cites.mjs`** — every

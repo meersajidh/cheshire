@@ -112,10 +112,10 @@ contribution a value rather than a call — [the application surface](../applica
 Namespaced `ns.verb` — `demo.showWelcome`, `workbench.togglePanel` — validated at
 `resolveApp`, duplicates rejected, with the error naming the application's own file.
 
-The id is the one VS Code mechanism that pays for itself with no external cause. It is the
-indirection that lets a **menu item, a keybinding, a palette row and a user's rebind** all name
-the same action without any of them holding a function. Remove it and every one of those features
-becomes impossible at once. Keep it even though the manifest that motivated it is gone.
+The id is the one VS Code mechanism nothing external forced. It is the indirection that lets a
+**menu item, a keybinding, a palette row and a user's rebind** all name the same action without
+any of them holding a function. Remove it and every one of those features becomes impossible at
+once. Keep it even though the manifest that motivated it is gone.
 
 ---
 
@@ -141,7 +141,7 @@ screen* ([the application surface](../application-surface.md) §3.2), which in t
 layout persistence somewhere to live that an application cannot contradict.
 
 `ctx` is also the reason `run` takes an argument at all. Without it an application would reach for
-a module-scope handle to the shell, and the invariant would be gone in the first week.
+a module-scope handle to the shell, and the invariant would not survive.
 
 ---
 
@@ -289,7 +289,7 @@ Two findings decided this:
 
 1. **The string form is forced, and the force does not reach us.** A `when` clause is a string
    because a manifest is JSON, and JSON cannot hold a function. Cheshire's contributions are
-   TypeScript values. The constraint simply is not there.
+   TypeScript values, so the constraint is not there.
 2. **ru-soam built the machinery and then did not use it for keybindings.** Every one of its ten
    platform default keybindings is a bare `key → command` with no `when`. The 228 lines are
    consumed by menu-item visibility and two filters; the context-key service drifted into being a
@@ -314,7 +314,7 @@ The predicate is a strictly better version of the same idea once the JSON constr
 is type-checked, it refactors with rename, it is greppable, and it deletes the parser, the
 expression cache and the global string-keyed namespace outright.
 
-**Two things a predicate genuinely cannot do:**
+**Two things a predicate cannot do:**
 
 1. **It is not serializable.** A user-authored keybinding override cannot carry a condition,
    because a file cannot hold a function. If Cheshire ever wants users writing context-sensitive

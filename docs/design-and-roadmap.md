@@ -260,7 +260,8 @@ cheshire/
 
 ```
 play-cheshire/
-└── apps/
+├── demo/
+└── …                     one directory per generated application
 ```
 
 - Separate repository, external to framework
