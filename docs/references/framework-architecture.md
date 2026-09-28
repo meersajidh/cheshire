@@ -1,6 +1,6 @@
 # Framework architecture
 
-> **What this is.** The shape of Cheshire as a _framework_ — the handful of problems any framework of this kind has to solve, the answer Cheshire picked for each, and why.
+> **What this is.** The shape of Cheshire as a _framework_ — the problems any framework of this kind has to solve, the answer Cheshire picked for each, and why.
 >
 > **Who it is for.** An engineer comfortable with TypeScript and React who has _used_ Next.js or Vite but never opened one. No Electron background assumed.
 >
@@ -8,7 +8,7 @@
 >
 > - Not a decision record; [the principles](../principles.md) hold those, and where this document explains a decision it points at them rather than restating them.
 > - Not a roadmap either; [design & roadmap](../design-and-roadmap.md) owns the structure, the package list and the stage plan, and this document assumes it.
-> - Not the surface either: what an application eventually contributes, and which system it contributes to, is [the application surface](../application-surface.md).
+> - Not the surface: what an application eventually contributes, and which system it contributes to, is [the application surface](../application-surface.md).
 >
 > **Reading order.** [principles](../principles.md) → [design & roadmap](../design-and-roadmap.md)
 > → [the application surface](../application-surface.md) → this → [the tour](codebase-tour.md).
@@ -17,48 +17,29 @@
 
 ---
 
-## 1. Library versus framework: who calls whom
+## 1. Overview
 
-A **library** is code you call. You own the program, you reach for the library when you need it,
-and it has no opinion about the rest of your application.
+As a **framework**, Cheshire's design is based on IoC (Inversion of Control) principle.
 
-A **framework** inverts that. It owns the program and calls _you_. You supply the pieces it asks
-for, in the places it looks, and it decides when they run.
+> It owns the program and calls _you_. You supply the pieces it asks for, in the places it looks, and it decides when they run.
 
 ```mermaid
 flowchart LR
-  subgraph LIB["Using a library"]
-    A["your program<br/>owns the entry point"] -->|calls| B["lodash<br/>date-fns<br/>react-dom"]
-  end
-  subgraph FW["Using a framework"]
-    C["Cheshire<br/>owns the entry point"] -->|calls| D["your cheshire.config.ts<br/>your src/"]
+  subgraph FW["Cheshire App"]
+    C["Cheshire framework<br/>owns the entry point"] -->|calls| D["App's cheshire.config.ts, src/"]
   end
 ```
 
-This is **inversion of control**. React is a mild example: you
-write components, React decides when to render them. Next.js is a strong one, and Cheshire is the
-same strength. An application never writes the HTML entry, never writes the module that mounts
-the shell, never writes the Electron main process, and never configures the bundler.
+> **Why a framework and not a starter template.**  
+> A template — "copy this repo and go" — hands over the same files without the inversion. Once an app owns the entry, every copy drifts on its own and one fix has to be applied once per app. The inversion is what makes a fix land everywhere at once. It is also why the generated entry is **rewritten on every run** rather than scaffolded once.
 
-**What it costs:** freedom at the edges. You cannot restructure the boot sequence, swap the
-bundler, or add a build step, because you do not own the files those live in.
-
-**What it buys:** everything at the edges is already correct, uniformly, for every application —
-including the parts nobody wants to re-derive per app: the renderer's sandbox settings, how the
-window is created, how the app is packaged, which flags a development launch needs on Linux.
-
-> **Why a framework and not a starter template.** A template — "copy this repo and go" — hands
-> over the same files without the inversion. Once an app owns the entry, every copy drifts on its
-> own and one fix has to be applied once per app. The inversion is what makes a fix land
-> everywhere at once. It is also why the generated entry is **rewritten on every run** rather than
-> scaffolded once: a file you regenerate is a file the framework still owns.
+**How the inversion is implemented.** The framework owns the entry and calls the application through **data** it reads: the application default-exports a declaration, and Cheshire finds it, validates it and renders it. §3.4 covers that mechanism, §6 places it among the classic inversion-of-control patterns.
 
 ---
 
-## 2. The ownership line
+## 2. Framework — Application boundary
 
-Everything below is downstream of one boundary: which files belong to the application, and which
-belong to Cheshire.
+What belongs to the application, and what belongs to Cheshire.
 
 |               | The application owns                   | Cheshire owns                                                   |
 | ------------- | -------------------------------------- | --------------------------------------------------------------- |
@@ -69,61 +50,141 @@ belong to Cheshire.
 | Generated     | _nothing — it is written for them_     | `.cheshire/`                                                    |
 | Build output  | its own renderer bundle                | its own packages, shipped built                                 |
 
-The line generalises past files. Cheshire's capabilities arrive as **systems**, each reached
-through named services — design, command, shell, settings, storage, identity, devtools — and the
-application's job at every one is to _declare into_ it, never to implement it. The table above is
-the stage-1 slice of that: today only views cross the line, and by stage 2 commands and menus do.
-The whole list, and which system each contribution belongs to, is
-[the application surface](../application-surface.md).
+Cheshire's capabilities arrive as **systems**, each reached through named _services_ — design, command, shell, settings, storage, identity, devtools ([design & roadmap](../design-and-roadmap.md) §3 owns the list).
 
-Two properties decay quietly if nobody watches.
+The table above is the stage-1 slice. Today only views cross the boundary; commands and menus join them at stage 2. The whole list, and which system each contribution belongs to, is [the application surface](../application-surface.md).
 
-**Cheshire arrives built.** What an application installs is compiled JavaScript, type declarations
-and a stylesheet — no framework TypeScript source at all. An app's build therefore compiles app
-code only, the same relationship it has with every other dependency
-([principle 5](../principles.md)). The consequence for you, on day one: after editing framework
-source you must **rebuild and republish** (`pnpm registry:publish`), then refresh the consumer
-with `pnpm update --latest "@cheshire/*"` — or your change silently does not appear, with nothing
-said about why.
+### Two properties to preserve
 
-**Generated files live in the application, not the framework.** `.cheshire/` sits in the app's own
-directory and is gitignored — the same convention as `.next/`, `.nuxt/` and `.svelte-kit/`.
+#### 1. Cheshire arrives built
+
+An application installs compiled JavaScript, type declarations and a stylesheet — no framework TypeScript source at all. An app's build therefore compiles app code only, just as the case with every other dependency ([principle 5](../principles.md)).
+
+> **The consequence:** The framework needs **rebuild and republish** (`pnpm registry:publish`) after every edit/commit, followed by **refresh** at the consumer end with `pnpm update --latest "@cheshire/*"`
+
+#### 2. Generated files live in the application, not the framework
+
+`.cheshire/` sits in the app's own directory and is gitignored — the same convention as `.next/`, `.nuxt/` and `.svelte-kit/`.
+
+### The boundary
+
+The boundary shows up in two places, so it takes two diagrams sharing one key: what an application imports, and what the CLI does with those files on every run.
+
+**A — the seam.** What an application imports, and what it never touches.
 
 ```mermaid
-flowchart TD
-  subgraph APP["Application — its own repo, e.g. demo"]
+flowchart LR
+
+subgraph APP["Application — its own repo"]
     CFG["cheshire.config.ts"]
-    SRC["src/ — the app's domain<br/>index.ts declares its contributions"]
-    GEN[".cheshire/ — GENERATED, gitignored<br/>index.html · renderer.tsx · config.ts<br/>main.mjs · prod/main.mjs · tsconfig.json · env.d.ts"]
-    OUT["dist/ — packaged application"]
-  end
-  subgraph FW["Cheshire — installed into node_modules"]
+    SRC["src/<br/>the app's domain<br/>index.ts declares contributions"]
+end
+
+subgraph FW["Cheshire — installed into node_modules"]
     APPPKG["@cheshire/app<br/>the app's whole surface"]
-    CLI["@cheshire/cli<br/>the cheshire bin: dev · build · package"]
     CORE["@cheshire/core<br/>the two contracts"]
-    WB["@cheshire/shell<br/>the shell, built"]
-    RT["@cheshire/runtime-electron<br/>window, lifecycle"]
-  end
-  CFG -->|imports| APPPKG
-  SRC -->|imports| APPPKG
-  APPPKG -->|export * from| CORE
-  CLI -->|reads| CFG
-  CLI -->|writes| GEN
-  CLI -.->|declares, so these resolve| WB
-  CLI -.->|declares| RT
-  GEN -->|imports| WB
-  GEN -->|imports| RT
-  GEN -->|imports| SRC
-  SRC -->|typechecked with| GEN
-  GEN --> OUT
+    REST["@cheshire/cli · @cheshire/shell<br/>@cheshire/runtime-electron"]
+end
+
+CFG -->|imports| APPPKG
+SRC -->|imports| APPPKG
+APPPKG -->|export * from| CORE
+
+classDef appfile   fill:#ffffff,stroke:#555555,color:#1a1a1a;
+classDef package   fill:#d6e4ff,stroke:#3355aa,color:#10224d;
+classDef unimported fill:#eef2fb,stroke:#8899bb,color:#5b6b85,stroke-dasharray:4 4;
+
+class CFG,SRC appfile;
+class APPPKG,CORE package;
+class REST unimported;
+```
+
+An application imports `@cheshire/app` and no other name. The faded box holds packages that are installed but never imported by application code, so no arrow reaches it.
+
+**B — the pipeline.** What the CLI does with those files on every run.
+
+```mermaid
+flowchart LR
+
+CLI["@cheshire/cli<br/>dev · build · package"]
+CFG["cheshire.config.ts"]
+SRC["src/"]
+GEN[".cheshire/<br/>GENERATED, gitignored"]
+OUT["dist/<br/>packaged application"]
+
+subgraph PKGS["hoisted into the app's node_modules"]
+    SHELL["@cheshire/shell"]
+    RT["@cheshire/runtime-electron"]
+end
+
+CLI -->|reads| CFG
+CLI -->|writes| GEN
+CLI -.->|dependency, hoisted flat| PKGS
+
+GEN -->|imports| SRC
+GEN -->|imports| PKGS
+SRC -->|typechecked with| GEN
+
+GEN -->|built and packaged| OUT
+
+classDef appfile   fill:#ffffff,stroke:#555555,color:#1a1a1a;
+classDef generated fill:#ffd4cf,stroke:#c0392b,color:#3d0f0a,stroke-dasharray:5 5;
+classDef package   fill:#d6e4ff,stroke:#3355aa,color:#10224d;
+classDef cli       fill:#ffe8b8,stroke:#a1730f,color:#3a2a05;
+classDef output    fill:#bfe6c3,stroke:#2f7d32,color:#0f2a11,stroke-width:3px;
+
+class CFG,SRC appfile;
+class GEN generated;
+class SHELL,RT package;
+class CLI cli;
+class OUT output;
+```
+
+> `.cheshire/` holds `index.html`, `renderer.tsx`, `config.ts`, `main.mjs`, `prod/main.mjs`, `tsconfig.json` and `env.d.ts`. Every file is rewritten on each run.
+
+**Key**, shared by both.
+
+```mermaid
+flowchart LR
+
+subgraph FILL["Boxes"]
+    direction TB
+    KAPP["app-owned, hand-written"]
+    KGEN["generated, gitignored<br/>rewritten every run"]
+    KPKG["installed package"]
+    KUN["installed, not imported<br/>by application code"]
+    KCLI["the CLI"]
+    KOUT["build output"]
+end
+
+subgraph LINE["Arrows"]
+    direction TB
+    KS1["from"] -->|reads · writes · imports · builds| KS2["to"]
+    KD1["from"] -.->|dependency of the CLI, hoisted flat| KD2["to"]
+end
+
+classDef appfile    fill:#ffffff,stroke:#555555,color:#1a1a1a;
+classDef generated  fill:#ffd4cf,stroke:#c0392b,color:#3d0f0a,stroke-dasharray:5 5;
+classDef package    fill:#d6e4ff,stroke:#3355aa,color:#10224d;
+classDef unimported fill:#eef2fb,stroke:#8899bb,color:#5b6b85,stroke-dasharray:4 4;
+classDef cli        fill:#ffe8b8,stroke:#a1730f,color:#3a2a05;
+classDef output     fill:#bfe6c3,stroke:#2f7d32,color:#0f2a11,stroke-width:3px;
+classDef plain      fill:#ffffff,stroke:#bbbbbb,color:#777777;
+
+class KAPP appfile;
+class KGEN generated;
+class KPKG package;
+class KUN unimported;
+class KCLI cli;
+class KOUT output;
+class KS1,KS2,KD1,KD2 plain;
 ```
 
 ---
 
 ## 3. Five problems, and how Cheshire solves them
 
-Every framework in this family answers the same five questions, and the answers are what
-distinguish one from another.
+Every framework in this family answers the same five questions. The answers are where they differ.
 
 ### 3.1 Finding the application
 
@@ -149,9 +210,7 @@ plain object that travels onward — into a generated module for the renderer, a
 Electron process as either an environment variable (development) or a value baked into the
 bundle (packaged).
 
-The property that matters: **the config is resolved exactly once, by the only process that has a
-TypeScript-capable loader.** Neither the renderer nor the Electron main process ever reads a
-config file or parses TypeScript.
+The config is resolved **exactly once**, by the only process with a TypeScript-capable loader. Neither the renderer nor the Electron main process ever reads a config file or parses TypeScript.
 
 ### 3.3 Joining the framework and the application into one program
 
@@ -166,16 +225,18 @@ banner-marked as generated, and edits are lost on the next run.
 The alternative — keeping the entry inside the framework package and reaching the app through
 virtual module specifiers — was rejected. It forces the framework to ship its source, and the app
 ends up holding both source and built output with nothing deciding which its imports resolve to.
-Writing a few files into the app is the cheaper half of that trade, and it settles one thing:
-because the importer physically lives in the app's directory, `@cheshire/shell`,
+Writing a few files into the app is the cheaper half of that trade. Because the importer lives in the app's directory, `@cheshire/shell`,
 `@cheshire/runtime-electron` and `react` resolve by name from the app's own `node_modules`.
 Nothing has to be aliased into existence.
 
-Only `react` is the application's own declaration. The two framework packages are dependencies of
-**`@cheshire/cli`**, hoisted flat into the app's `node_modules`. The CLI emits those import
-statements, so the CLI is what must guarantee they resolve.
-An application declares `@cheshire/app` and `@cheshire/cli` and nothing else of Cheshire's; it
-never names a package it does not import.
+Only `react` is the application's own declaration. `@cheshire/shell` and
+`@cheshire/runtime-electron` are dependencies of **`@cheshire/cli`**, so pnpm installs them
+transitively and hoists them flat into the app's `node_modules`. `.cheshire/` sits at the app
+root, so Node's upward walk for a bare specifier reaches them on its first step.
+
+The CLI never imports either package. It writes the files that do, which is what makes declaring
+them its job: an application declares `@cheshire/app` and `@cheshire/cli` and nothing else of
+Cheshire's, and never names a package it does not import.
 
 **That "hoisted flat" is `nodeLinker: hoisted` in the generated `pnpm-workspace.yaml`, and this is
 its second load-bearing reason.** The first is packaging: pnpm's default isolated linker uses
@@ -195,8 +256,7 @@ reachable only through `@cheshire/cli/node_modules`, where a file in `.cheshire/
 Both installs succeed. The manifest is satisfiable either way, so nothing at install time
 indicates a problem.
 
-The failure modes are asymmetric, and the packaging one is the quieter half: it fails late, at
-packaging, on Windows only. Resolution fails on the first build, on every platform — and the error
+The two failure modes differ. The packaging one fails late, at packaging, on Windows only. Resolution fails on the first build, on every platform — and the error
 names a package the application never declared, with nothing to suggest a linker is involved.
 
 Three details in the generated tsconfig are load-bearing, and each was paid for once:
@@ -230,6 +290,20 @@ export default defineApp({
 });
 ```
 
+Breaking that shape into its parts:
+
+```ts
+export default defineApp({      ← root: the declaration
+  views: [                      ← branch: a contribution kind
+    { id, title, component }    ← node: one contribution
+  ]                                 ↑
+})                                  leaf: app code; the component here
+```
+
+Everything above the leaf is inert data the framework reads. The leaf is the application's own
+executable code, which the framework decides when to run — a view's component today, a command's
+handler at stage 2.
+
 Three properties of that shape:
 
 - **Declarative, not imperative.** The app says what exists; it never says what is on screen.
@@ -248,10 +322,9 @@ whole by `@cheshire/app` so an application still names one package. The split is
 React-free — with `skipLibCheck` on, an unresolved `react` inside a `.d.ts` degrades to `any` in
 silence rather than erroring.
 
-Crossing that split is a second one, by audience. `@cheshire/core/views` carries `defineApp` and
+A second split runs across it, by audience. `@cheshire/core/views` carries `defineApp` and
 its types — what an application declares. `resolveApp` and `CheshireAppError`, which validate a
-declaration, sit on `@cheshire/core/views/internal` and are `@cheshire/shell`'s alone. That is
-what lets `@cheshire/app` be `export *` rather than a hand-kept list: a public entry is exactly
+declaration, sit on `@cheshire/core/views/internal` and are `@cheshire/shell`'s alone. `@cheshire/app` can therefore be `export *` rather than a hand-kept list: a public entry is exactly
 the application-facing API, so forwarding all of it cannot leak an internal, and a symbol added
 upstream cannot go silently missing downstream.
 
@@ -307,20 +380,17 @@ flowchart LR
   M --> P["electron-builder<br/>asar + installer"]
 ```
 
-Two things about that last pair decide how the packaging works.
+The last two steps decide how packaging works.
 
 **The main process is bundled, with the runtime inlined.** `electron` and the Node builtins stay
 external — they are baked into the Electron binary and exist only at run time, so they cannot be
 bundled and do not need to be. Everything else is concatenated into one file.
 
 **Therefore a packaged application ships no `node_modules` at all.** The asar contains the main
-bundle, the renderer bundle and a `package.json`, and nothing else. The application names no
-runtime anywhere in it — [principle 4](../principles.md) holding in practice.
+bundle, the renderer bundle and a `package.json`, and nothing else. The application names no runtime anywhere in it, which is [principle 4](../principles.md) in practice.
 
-The trap under it: electron-builder collects production dependencies in a pass of its own,
-_outside_ the `files` patterns, and only an explicit `!node_modules/**` stops it. That negation
-is now the whole defence rather than half of it. It used to be backed up by an accident — every
-`@cheshire/*` was a devDependency, so the production pass found nothing to collect. Since
+electron-builder collects production dependencies in a pass of its own,
+_outside_ the `files` patterns, and only an explicit `!node_modules/**` stops it. That negation used to have a backstop: every `@cheshire/*` was a devDependency, so the production pass found nothing to collect. Since
 `@cheshire/app` became the application's import surface it is a real **dependency**, beside
 `react` and `react-dom`, and the pass has entries to walk. Remove the negation and the installer
 grows to match.
@@ -339,9 +409,8 @@ process or window APIs ([principle 4](../principles.md)). The runtime _interface
 that portable are designed with the runtime layer, not deferred until a second runtime exists;
 a port is what validates them, and is expected to expose gaps when it happens.
 
-**The renderer is treated as web content, because it is.** `contextIsolation: true`,
-`nodeIntegration: false`, `sandbox: true`, in development and in production alike. Since app code
-never reaches those APIs anyway, none of it is a compromise. Links the app does not own open in
+**The renderer is treated as web content.** `contextIsolation: true`,
+`nodeIntegration: false`, `sandbox: true`, in development and in production alike. App code never reaches those APIs, so none of these settings costs the application anything. Links the app does not own open in
 the user's browser, not in a chrome-less Electron window.
 
 **The binary is not installed for you.** Electron 43 declares no postinstall — it ships its
@@ -365,20 +434,24 @@ installation is unaffected, because the installer's postinstall does SUID it.
 **A real install is the only proof.** Workspace links resolve source paths and hide packaging
 failures — an `exports` entry pointing at a `.ts` file works perfectly through a link and fails
 on every real install. So Cheshire's playground and every gate consume the framework from a **local
-registry**, from the very first run. This is not caution; it is the rule that caught, during stage
-0, a package that installed with no type declarations at all because one build step emptied the
-directory another had written to.
+registry**, from the very first run. During stage 0 the rule caught a package that installed with no type declarations at all, because one build step emptied the directory another had written to.
 
 **No plugin system.** Views, commands and menus contributed by an application are the platform's
-ordinary surface, not a plugin mechanism. The application is the only extension. What that removes
-is an entire category of machinery — manifests parsed at runtime, per-extension sandboxes, trust
-classes, an API version handshake between host and extension, lazy activation events — and what
-it buys is that
-**a contribution is a value the compiler can see**. A typo'd command id in a menu becomes a build
+ordinary surface, not a plugin mechanism. The application is the only extension. That removes an entire category of machinery — manifests parsed at runtime, per-extension sandboxes, trust classes, an API version handshake between host and extension, lazy activation events — and makes **a contribution a value the compiler can see**. A typo'd command id in a menu becomes a build
 error naming the application's own file, not a warning in a log at runtime.
 
-**Systems, not a pile of APIs.** Everything Cheshire ships is grouped as a system an application
-declares into, and every system is reached through named **services** — one typed hook each.
+**The classic inversion-of-control patterns apply unevenly, and the gaps are the informative part.**
+
+| Pattern                  | Where it appears in Cheshire                                                                                                                                                                                                                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Template method**      | Structurally the closest. Cheshire fixes the skeleton — boot sequence, mount, the shell's zones — and the application fills named slots. The slots are filled by values in an object literal, not by overriding methods on a base class; there is no inheritance anywhere in the surface.             |
+| **Strategy**             | At the leaves. `component` is a React component Cheshire decides when to render; a command handler (stage 2) will be the same shape. Accurate about a single contribution, silent about the fact that the whole application arrives as one declared tree.                                             |
+| **Dependency injection** | Framework-internal, at seams, with no container. `mountShell({ config, app })` is the shell's injection point; host-side services are handed to the host entry as a context object. On the renderer side each service has one typed zero-argument hook — React context, resolved by the type checker. |
+| **Service locator**      | Deliberately absent. There is no `container.get("commands")`. A locator exists to resolve late-bound, independently versioned, untrusted code at run time; [principle 3](../principles.md) removes all three, so the bundler's import graph _is_ the resolution.                                      |
+
+The last row is the same collapse the previous item describes for plugin machinery, seen from the dependency side: strip late binding and the runtime lookup goes with it.
+
+**Capabilities are grouped into systems.** Everything Cheshire ships belongs to a system an application declares into, and every system is reached through named **services** — one typed hook each.
 The test of whether something belongs in a system is whether an application would otherwise
 write it: a shortcut matcher, a menu bar, a theme switcher, a docking implementation. None of
 those are application code, in any phase. The canonical list is
